@@ -1,3 +1,3 @@
 # Flixer
 
-A new Flutter project.
+Movies and TV Shows App
