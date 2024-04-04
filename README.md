@@ -1,3 +1,3 @@
-# flixer
+# Flixer
 
 A new Flutter project.
