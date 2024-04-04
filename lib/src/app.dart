@@ -1,8 +1,11 @@
 import 'package:flixer/src/apiFunctions/discoverMovies.dart';
 import 'package:flixer/src/apiFunctions/discoverSeries.dart';
+import 'package:flixer/ads/adaptativeBannerAd.dart';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:flixer/global/variables.dart';
 
 import 'widgets/discover.dart';
 import 'pages/matchPage/matchPage.dart';
@@ -32,8 +35,8 @@ class MainApp extends State<MainPage> with SingleTickerProviderStateMixin {
   void initState() {
     super.initState();
     getPreferences();
-    getMovies();
-    getSeries();
+    // getMovies();
+    // getSeries();
   }
 
   void getPreferences() async {
@@ -56,8 +59,8 @@ class MainApp extends State<MainPage> with SingleTickerProviderStateMixin {
           : ThemeMode.light;
     });
 
-    // getMovies();
-    // getSeries();
+    getMovies();
+    getSeries();
   }
 
   void getMovies() async {
@@ -76,18 +79,18 @@ class MainApp extends State<MainPage> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final children = [
-      Discover(
-        list: movies,
-        onRefresh: () => getMovies(),
-      ),
-      Discover(
-        list: series,
-        onRefresh: () => getSeries(),
-      ),
-      const MatchPage(),
-      const UserPage()
-    ];
+    // final children = [
+    //   Discover(
+    //     list: movies,
+    //     onRefresh: () => getMovies(),
+    //   ),
+    //   Discover(
+    //     list: series,
+    //     onRefresh: () => getSeries(),
+    //   ),
+    //   const MatchPage(),
+    //   const UserPage()
+    // ];
 
     switchTheme = mode == ThemeMode.dark ? false : true;
 
@@ -101,141 +104,114 @@ class MainApp extends State<MainPage> with SingleTickerProviderStateMixin {
             initialIndex: 0,
             length: 2,
             child: Scaffold(
-              appBar: AppBar(
-                backgroundColor: Theme.of(context).colorScheme.background,
-                title: Text(
-                  'FLIXER',
-                  style: TextStyle(
-                      color: Theme.of(context).colorScheme.onBackground),
-                ),
-                actions: [
-                  // IconButton(
-                  //     onPressed: () {
-                  //       setState(() {
-                  //         mode = mode == ThemeMode.dark
-                  //             ? ThemeMode.light
-                  //             : ThemeMode.dark;
-                  //       });
-                  //     },
-                  //     icon: Icon(
-                  //       mode == ThemeMode.dark
-                  //           ? Icons.light_mode
-                  //           : Icons.dark_mode,
-                  //       color: Theme.of(context).colorScheme.onBackground,
-                  //       size: 25,
-                  //     )),
-                  IconButton(
-                      onPressed: () {
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const SearchView()));
-                      },
-                      icon: Icon(
-                        Icons.search,
-                        color: Theme.of(context).colorScheme.onBackground,
-                        size: 25,
-                      )),
-                  IconButton(
-                      onPressed: () {
-                        showModalBottomSheet(
-                          context: context,
-                          builder: (context) {
-                            return Padding(
-                              padding: const EdgeInsets.only(
-                                  left: 15, right: 15, bottom: 15),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                mainAxisSize: MainAxisSize.min,
-                                children: <Widget>[
-                                  Padding(
-                                    padding:
-                                        const EdgeInsets.fromLTRB(0, 10, 0, 20),
-                                    child: SizedBox(
-                                        width:
-                                            MediaQuery.of(context).size.width /
-                                                4,
-                                        child: Container(
-                                          width: double.infinity,
-                                          height: 5,
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(100),
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .secondary,
-                                          ),
-                                        )),
-                                  ),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Row(children: [
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 15),
-                                          child: Icon(
-                                            Icons.translate,
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .onBackground,
-                                          ),
-                                        ),
-                                        Text(
-                                          'Language',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .displayMedium
-                                              ?.copyWith(fontSize: 18),
-                                        ),
-                                      ]),
-                                      SizedBox(
-                                        width: 150,
-                                        child: DropdownMenu(
-                                          expandedInsets: EdgeInsets.only(
-                                              left: 20, right: 0),
-                                          inputDecorationTheme:
-                                              InputDecorationTheme(
-                                                  border: InputBorder.none),
-                                          initialSelection: lang,
-                                          textStyle: Theme.of(context)
-                                              .textTheme
-                                              .displaySmall
-                                              ?.copyWith(
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .onBackground,
-                                                  fontSize: 18),
-                                          menuStyle: MenuStyle(
-                                              backgroundColor:
-                                                  MaterialStatePropertyAll(
-                                                      Theme.of(context)
-                                                          .colorScheme
-                                                          .surfaceTint),
-                                              shadowColor:
-                                                  MaterialStatePropertyAll(
-                                                      Colors.transparent)),
-                                          dropdownMenuEntries: [
-                                            DropdownMenuEntry(
-                                              value: 'en',
-                                              label: 'English',
-                                              labelWidget: Text('English',
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .displaySmall
-                                                      ?.copyWith(
-                                                          color:
-                                                              Theme.of(context)
-                                                                  .colorScheme
-                                                                  .onBackground,
-                                                          decorationColor: Colors
-                                                              .transparent)),
+                appBar: AppBar(
+                  backgroundColor: Theme.of(context).colorScheme.background,
+                  leading: Image.asset(
+                    mode == ThemeMode.dark
+                        ? 'assets/icon/darkThemeIconLarge.png'
+                        : 'assets/icon/lightThemeIconLarge.png',
+                    height: 50,
+                    width: 50,
+                  ),
+                  actions: [
+                    IconButton(
+                        onPressed: () {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const SearchView()));
+                        },
+                        icon: Icon(
+                          Icons.search,
+                          color: Theme.of(context).colorScheme.onBackground,
+                          size: 25,
+                        )),
+                    IconButton(
+                        onPressed: () {
+                          showModalBottomSheet(
+                            context: context,
+                            builder: (context) {
+                              return Padding(
+                                padding: const EdgeInsets.only(
+                                    left: 15, right: 15, bottom: 15),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: <Widget>[
+                                    Padding(
+                                      padding: const EdgeInsets.fromLTRB(
+                                          0, 10, 0, 20),
+                                      child: SizedBox(
+                                          width: MediaQuery.of(context)
+                                                  .size
+                                                  .width /
+                                              4,
+                                          child: Container(
+                                            width: double.infinity,
+                                            height: 5,
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(100),
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .secondary,
                                             ),
-                                            DropdownMenuEntry(
-                                                value: 'es',
-                                                label: 'Español',
-                                                labelWidget: Text('Español',
+                                          )),
+                                    ),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Row(children: [
+                                          Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 15),
+                                            child: Icon(
+                                              Icons.translate,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onBackground,
+                                            ),
+                                          ),
+                                          Text(
+                                            'Language',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .displayMedium
+                                                ?.copyWith(fontSize: 18),
+                                          ),
+                                        ]),
+                                        SizedBox(
+                                          width: 150,
+                                          child: DropdownMenu(
+                                            expandedInsets: EdgeInsets.only(
+                                                left: 20, right: 0),
+                                            inputDecorationTheme:
+                                                InputDecorationTheme(
+                                                    border: InputBorder.none),
+                                            initialSelection: language,
+                                            textStyle: Theme.of(context)
+                                                .textTheme
+                                                .displaySmall
+                                                ?.copyWith(
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .onBackground,
+                                                    fontSize: 18),
+                                            menuStyle: MenuStyle(
+                                                backgroundColor:
+                                                    MaterialStatePropertyAll(
+                                                        Theme.of(context)
+                                                            .colorScheme
+                                                            .surfaceTint),
+                                                shadowColor:
+                                                    MaterialStatePropertyAll(
+                                                        Colors.transparent)),
+                                            dropdownMenuEntries: [
+                                              DropdownMenuEntry(
+                                                value: 'en',
+                                                label: 'English',
+                                                labelWidget: Text('English',
                                                     style: Theme.of(context)
                                                         .textTheme
                                                         .displaySmall
@@ -245,86 +221,91 @@ class MainApp extends State<MainPage> with SingleTickerProviderStateMixin {
                                                                 .colorScheme
                                                                 .onBackground,
                                                             decorationColor: Colors
-                                                                .transparent)))
-                                          ],
-                                          onSelected: (value) async {
-                                            SharedPreferences prefs =
-                                                await _prefs;
-                                            prefs.setString('language', value!);
-                                          },
-                                        ),
-                                      )
-                                    ],
-                                  ),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Row(children: [
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 15),
-                                          child: Icon(
-                                            Icons.place,
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .onBackground,
-                                          ),
-                                        ),
-                                        Text(
-                                          'Region',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .displayMedium
-                                              ?.copyWith(fontSize: 18),
-                                        ),
-                                      ]),
-                                      SizedBox(
-                                        width: 150,
-                                        child: DropdownMenu(
-                                          expandedInsets: EdgeInsets.only(
-                                              left: 20, right: 0),
-                                          inputDecorationTheme:
-                                              InputDecorationTheme(
-                                                  border: InputBorder.none),
-                                          initialSelection: watchReg,
-                                          textStyle: Theme.of(context)
-                                              .textTheme
-                                              .displaySmall
-                                              ?.copyWith(
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .onBackground,
-                                                  fontSize: 18),
-                                          menuStyle: MenuStyle(
-                                              backgroundColor:
-                                                  MaterialStatePropertyAll(
-                                                      Theme.of(context)
-                                                          .colorScheme
-                                                          .surfaceTint),
-                                              shadowColor:
-                                                  MaterialStatePropertyAll(
-                                                      Colors.transparent)),
-                                          dropdownMenuEntries: [
-                                            DropdownMenuEntry(
-                                              value: 'US',
-                                              label: 'USA',
-                                              labelWidget: Text('USA',
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .displaySmall
-                                                      ?.copyWith(
-                                                          color:
-                                                              Theme.of(context)
+                                                                .transparent)),
+                                              ),
+                                              DropdownMenuEntry(
+                                                  value: 'es',
+                                                  label: 'Español',
+                                                  labelWidget: Text('Español',
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .displaySmall
+                                                          ?.copyWith(
+                                                              color: Theme.of(
+                                                                      context)
                                                                   .colorScheme
                                                                   .onBackground,
-                                                          decorationColor: Colors
-                                                              .transparent)),
+                                                              decorationColor:
+                                                                  Colors
+                                                                      .transparent)))
+                                            ],
+                                            onSelected: (value) async {
+                                              language = value!;
+                                              SharedPreferences prefs =
+                                                  await _prefs;
+                                              prefs.setString(
+                                                  'language', value);
+                                              getMovies();
+                                              getSeries();
+                                            },
+                                          ),
+                                        )
+                                      ],
+                                    ),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Row(children: [
+                                          Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 15),
+                                            child: Icon(
+                                              Icons.place,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onBackground,
                                             ),
-                                            DropdownMenuEntry(
-                                                value: 'CL',
-                                                label: 'Chile',
-                                                labelWidget: Text('Chile',
+                                          ),
+                                          Text(
+                                            'Region',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .displayMedium
+                                                ?.copyWith(fontSize: 18),
+                                          ),
+                                        ]),
+                                        SizedBox(
+                                          width: 150,
+                                          child: DropdownMenu(
+                                            expandedInsets: EdgeInsets.only(
+                                                left: 20, right: 0),
+                                            inputDecorationTheme:
+                                                InputDecorationTheme(
+                                                    border: InputBorder.none),
+                                            initialSelection: region,
+                                            textStyle: Theme.of(context)
+                                                .textTheme
+                                                .displaySmall
+                                                ?.copyWith(
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .onBackground,
+                                                    fontSize: 18),
+                                            menuStyle: MenuStyle(
+                                                backgroundColor:
+                                                    MaterialStatePropertyAll(
+                                                        Theme.of(context)
+                                                            .colorScheme
+                                                            .surfaceTint),
+                                                shadowColor:
+                                                    MaterialStatePropertyAll(
+                                                        Colors.transparent)),
+                                            dropdownMenuEntries: [
+                                              DropdownMenuEntry(
+                                                value: 'US',
+                                                label: 'USA',
+                                                labelWidget: Text('USA',
                                                     style: Theme.of(context)
                                                         .textTheme
                                                         .displaySmall
@@ -334,162 +315,198 @@ class MainApp extends State<MainPage> with SingleTickerProviderStateMixin {
                                                                 .colorScheme
                                                                 .onBackground,
                                                             decorationColor: Colors
-                                                                .transparent)))
+                                                                .transparent)),
+                                              ),
+                                              DropdownMenuEntry(
+                                                  value: 'CL',
+                                                  label: 'Chile',
+                                                  labelWidget: Text('Chile',
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .displaySmall
+                                                          ?.copyWith(
+                                                              color: Theme.of(
+                                                                      context)
+                                                                  .colorScheme
+                                                                  .onBackground,
+                                                              decorationColor:
+                                                                  Colors
+                                                                      .transparent)))
+                                            ],
+                                            onSelected: (value) async {
+                                              region = value!;
+                                              SharedPreferences prefs =
+                                                  await _prefs;
+                                              prefs.setString(
+                                                  'watchRegion', value);
+                                              getMovies();
+                                              getSeries();
+                                            },
+                                          ),
+                                        )
+                                      ],
+                                    ),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Row(children: [
+                                          Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 15),
+                                            child: Icon(
+                                              Icons.light,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onBackground,
+                                            ),
+                                          ),
+                                          Text(
+                                            'Theme',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .displayMedium
+                                                ?.copyWith(fontSize: 18),
+                                          ),
+                                        ]),
+                                        Row(
+                                          children: [
+                                            Text(
+                                              'Dark',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .displaySmall
+                                                  ?.copyWith(
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .onBackground,
+                                                      fontSize: 15),
+                                            ),
+                                            Switch(
+                                                value: switchTheme,
+                                                onChanged: (value) async {
+                                                  setState(() {
+                                                    mode =
+                                                        mode == ThemeMode.dark
+                                                            ? ThemeMode.light
+                                                            : ThemeMode.dark;
+                                                  });
+                                                  SharedPreferences prefs =
+                                                      await _prefs;
+                                                  prefs.setString('themeMode',
+                                                      value ? 'light' : 'dark');
+                                                }),
+                                            Text(
+                                              'Light',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .displaySmall
+                                                  ?.copyWith(
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .onBackground,
+                                                      fontSize: 15),
+                                            ),
                                           ],
-                                          onSelected: (value) async {
-                                            SharedPreferences prefs =
-                                                await _prefs;
-                                            prefs.setString(
-                                                'watchRegion', value!);
-                                          },
-                                        ),
-                                      )
-                                    ],
-                                  ),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Row(children: [
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 15),
-                                          child: Icon(
-                                            Icons.light,
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .onBackground,
-                                          ),
-                                        ),
-                                        Text(
-                                          'Theme',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .displayMedium
-                                              ?.copyWith(fontSize: 18),
-                                        ),
-                                      ]),
-                                      Row(
-                                        children: [
-                                          Text(
-                                            'Dark',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .displaySmall
-                                                ?.copyWith(
-                                                    color: Theme.of(context)
-                                                        .colorScheme
-                                                        .onBackground,
-                                                    fontSize: 15),
-                                          ),
-                                          Switch(
-                                              value: switchTheme,
-                                              onChanged: (value) async {
-                                                setState(() {
-                                                  mode = mode == ThemeMode.dark
-                                                      ? ThemeMode.light
-                                                      : ThemeMode.dark;
-                                                });
-                                                SharedPreferences prefs =
-                                                    await _prefs;
-                                                prefs.setString('themeMode',
-                                                    value ? 'light' : 'dark');
-                                              }),
-                                          Text(
-                                            'Light',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .displaySmall
-                                                ?.copyWith(
-                                                    color: Theme.of(context)
-                                                        .colorScheme
-                                                        .onBackground,
-                                                    fontSize: 15),
-                                          ),
-                                        ],
-                                      )
-                                    ],
-                                  )
-                                ],
-                              ),
-                            );
-                          },
-                          shape: const RoundedRectangleBorder(
-                              borderRadius: BorderRadius.only(
-                                  topLeft: Radius.circular(20),
-                                  topRight: Radius.circular(20))),
-                        );
-                      },
-                      icon: Icon(
-                        Icons.settings,
-                        color: Theme.of(context).colorScheme.onBackground,
-                        size: 25,
-                      ))
-                ],
-                bottom: TabBar(
-                    labelStyle: Theme.of(context).textTheme.displayMedium,
-                    indicatorColor: Theme.of(context).colorScheme.primary,
-                    tabs: const [
-                      Tab(
-                        text: 'Movies',
-                      ),
-                      Tab(
-                        text: 'Series',
-                      )
-                    ]),
-              ),
-              body: TabBarView(children: [
-                Discover(
-                  list: movies,
-                  onRefresh: () => getMovies(),
+                                        )
+                                      ],
+                                    )
+                                  ],
+                                ),
+                              );
+                            },
+                            shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.only(
+                                    topLeft: Radius.circular(20),
+                                    topRight: Radius.circular(20))),
+                          );
+                        },
+                        icon: Icon(
+                          Icons.settings,
+                          color: Theme.of(context).colorScheme.onBackground,
+                          size: 25,
+                        ))
+                  ],
+                  bottom: TabBar(
+                      labelStyle: Theme.of(context).textTheme.displayMedium,
+                      indicatorColor: Theme.of(context).colorScheme.primary,
+                      tabs: const [
+                        Tab(
+                          text: 'Movies',
+                        ),
+                        Tab(
+                          text: 'Series',
+                        )
+                      ]),
                 ),
-                Discover(
-                  list: series,
-                  onRefresh: () => getSeries(),
+                body: FutureBuilder(
+                  future: Future.delayed(const Duration(seconds: 1)),
+                  builder: (context, snapshot) {
+                    if (movies.isEmpty && series.isEmpty) {
+                      return Center(
+                        child: CircularProgressIndicator(
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      );
+                    } else {
+                      return TabBarView(children: [
+                        Discover(
+                          list: movies,
+                          onRefresh: () => getMovies(),
+                        ),
+                        Discover(
+                          list: series,
+                          onRefresh: () => getSeries(),
+                        ),
+                      ]);
+                    }
+                  },
                 ),
-              ]),
-              // bottomNavigationBar: BottomNavigationBar(
-              //     type: BottomNavigationBarType.fixed,
-              //     backgroundColor: Theme.of(context).colorScheme.background,
-              //     currentIndex: selectedIndex,
-              //     iconSize: 30,
-              //     showSelectedLabels: true,
-              //     selectedFontSize: 12,
-              //     unselectedFontSize: 12,
-              //     showUnselectedLabels: true,
-              //     selectedItemColor: Theme.of(context).colorScheme.onBackground,
-              //     unselectedItemColor: Theme.of(context).colorScheme.secondary,
-              //     onTap: (value) {
-              //       setState(() {
-              //         selectedIndex = value;
-              //       });
-              //       if (value == 1 && series.isEmpty) {
-              //         getSeries();
-              //       }
-              //     },
-              //     items: const [
-              //       BottomNavigationBarItem(
-              //           icon: Icon(
-              //             Icons.movie,
-              //           ),
-              //           label: 'Movies'),
-              //       BottomNavigationBarItem(
-              //           icon: Icon(
-              //             Icons.tv,
-              //           ),
-              //           label: 'Series'),
-              //       // BottomNavigationBarItem(
-              //       //     icon: Icon(
-              //       //       Icons.light,
-              //       //     ),
-              //       //     label: 'Match'),
-              //       // BottomNavigationBarItem(
-              //       //     icon: Icon(
-              //       //       Icons.person,
-              //       //     ),
-              //       //     label: 'User')
-              //     ])
-            ),
+                bottomNavigationBar: Container(
+                    color: Theme.of(context).colorScheme.background,
+                    child: AdaptativeBannerAdWidget())
+                // bottomNavigationBar: BottomNavigationBar(
+                //     type: BottomNavigationBarType.fixed,
+                //     backgroundColor: Theme.of(context).colorScheme.background,
+                //     currentIndex: selectedIndex,
+                //     iconSize: 30,
+                //     showSelectedLabels: true,
+                //     selectedFontSize: 12,
+                //     unselectedFontSize: 12,
+                //     showUnselectedLabels: true,
+                //     selectedItemColor: Theme.of(context).colorScheme.onBackground,
+                //     unselectedItemColor: Theme.of(context).colorScheme.secondary,
+                //     onTap: (value) {
+                //       setState(() {
+                //         selectedIndex = value;
+                //       });
+                //       if (value == 1 && series.isEmpty) {
+                //         getSeries();
+                //       }
+                //     },
+                //     items: const [
+                //       BottomNavigationBarItem(
+                //           icon: Icon(
+                //             Icons.movie,
+                //           ),
+                //           label: 'Movies'),
+                //       BottomNavigationBarItem(
+                //           icon: Icon(
+                //             Icons.tv,
+                //           ),
+                //           label: 'Series'),
+                //       // BottomNavigationBarItem(
+                //       //     icon: Icon(
+                //       //       Icons.light,
+                //       //     ),
+                //       //     label: 'Match'),
+                //       // BottomNavigationBarItem(
+                //       //     icon: Icon(
+                //       //       Icons.person,
+                //       //     ),
+                //       //     label: 'User')
+                //     ])
+                ),
           ),
         ));
   }

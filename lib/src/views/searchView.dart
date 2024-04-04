@@ -1,8 +1,13 @@
 import 'dart:math';
 
+import 'package:flixer/ads/adaptativeBannerAd.dart';
 import 'package:flixer/src/widgets/movieInfo.dart';
+import 'package:flixer/src/widgets/personInfo.dart';
 import 'package:flutter/material.dart';
 import 'package:flixer/src/apiFunctions/search.dart';
+
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'dart:io' show Platform;
 
 class SearchView extends StatefulWidget {
   const SearchView({super.key});
@@ -19,9 +24,17 @@ class _SearchViewState extends State<SearchView> {
   List searchPeopleList = [];
   late FocusNode focusNode;
 
+  final String _adUnitId = Platform.isAndroid
+      ? 'ca-app-pub-3038495459046159/7990033984'
+      : 'ca-app-pub-3940256099942544/3986624511';
+
+  NativeAd? _nativeAd;
+  bool _nativeAdIsLoaded = false;
+
   @override
   void initState() {
     super.initState();
+    loadAd();
 
     focusNode = FocusNode();
     focusNode.requestFocus();
@@ -30,10 +43,10 @@ class _SearchViewState extends State<SearchView> {
 
   @override
   void dispose() {
-    // Clean up the focus node when the Form is disposed.
-    focusNode.dispose();
-
     super.dispose();
+    focusNode.dispose();
+    _nativeAd?.dispose();
+    _nativeAd = null;
   }
 
   @override
@@ -49,88 +62,132 @@ class _SearchViewState extends State<SearchView> {
       initialIndex: 0,
       length: 4,
       child: Scaffold(
-          backgroundColor: Theme.of(context).colorScheme.background,
-          body: SafeArea(
-            child: Padding(
-                padding: const EdgeInsets.only(top: 10),
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 15),
-                      child: Row(
-                        children: [
-                          BackButton(
-                            color: Theme.of(context).colorScheme.onBackground,
-                            style: const ButtonStyle(
-                                iconSize: MaterialStatePropertyAll(1)),
-                          ),
-                          Expanded(
-                              child: SearchBar(
-                            shadowColor: const MaterialStatePropertyAll(
-                                Colors.transparent),
-                            focusNode: focusNode,
-                            hintText: 'Search...',
-                            hintStyle: MaterialStatePropertyAll(TextStyle(
-                                color: Theme.of(context).colorScheme.onSurface,
-                                fontSize: 17)),
-                            backgroundColor: MaterialStatePropertyAll(
-                                Theme.of(context).colorScheme.surface),
-                            textStyle: MaterialStatePropertyAll(TextStyle(
-                                decorationThickness: 0,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurfaceVariant,
-                                fontSize: 17)),
-                            onChanged: (value) async {
-                              setState(() {
-                                searchString = value;
-                              });
+        resizeToAvoidBottomInset: false,
+        backgroundColor: Theme.of(context).colorScheme.background,
+        body: SafeArea(
+          child: Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 15),
+                    child: Row(
+                      children: [
+                        BackButton(
+                          color: Theme.of(context).colorScheme.onBackground,
+                          style: const ButtonStyle(
+                              iconSize: MaterialStatePropertyAll(1)),
+                        ),
+                        Expanded(
+                            child: SearchBar(
+                          shadowColor: const MaterialStatePropertyAll(
+                              Colors.transparent),
+                          focusNode: focusNode,
+                          hintText: 'Search...',
+                          hintStyle: MaterialStatePropertyAll(TextStyle(
+                              color: Theme.of(context).colorScheme.onSurface,
+                              fontSize: 17)),
+                          backgroundColor: MaterialStatePropertyAll(
+                              Theme.of(context).colorScheme.surface),
+                          textStyle: MaterialStatePropertyAll(TextStyle(
+                              decorationThickness: 0,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                              fontSize: 17)),
+                          onChanged: (value) async {
+                            setState(() {
+                              searchString = value;
+                            });
 
-                              getLists();
-                              // if (value == '') {
-                              //   fetchTrendingMovies();
-                              // }
-                            },
-                          ))
-                        ],
-                      ),
-                    ),
-                    const SizedBox(
-                      height: 10,
-                    ),
-                    TabBar(
-                      labelColor: Theme.of(context).colorScheme.onBackground,
-                      indicatorColor: Theme.of(context).colorScheme.primary,
-                      tabs: const <Widget>[
-                        Tab(
-                          text: 'All',
-                        ),
-                        Tab(
-                          text: 'Movies',
-                        ),
-                        Tab(
-                          text: 'Series',
-                        ),
-                        Tab(
-                          text: 'People',
-                        )
+                            getLists();
+                            // if (value == '') {
+                            //   fetchTrendingMovies();
+                            // }
+                          },
+                        ))
                       ],
                     ),
-                    Divider(
-                      height: 0,
-                      thickness: 2,
-                    ),
-                    Expanded(
-                        child: TabBarView(children: [
-                      showSearch(searchAllList),
-                      showSearch(searchMoviesList),
-                      showSearch(searchSeriesList),
-                      showSearch(searchPeopleList)
-                    ]))
-                  ],
-                )),
-          )),
+                  ),
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  TabBar(
+                    labelColor: Theme.of(context).colorScheme.onBackground,
+                    indicatorColor: Theme.of(context).colorScheme.primary,
+                    tabs: const <Widget>[
+                      Tab(
+                        text: 'All',
+                      ),
+                      Tab(
+                        text: 'Movies',
+                      ),
+                      Tab(
+                        text: 'Series',
+                      ),
+                      Tab(
+                        text: 'People',
+                      )
+                    ],
+                  ),
+                  Divider(
+                    height: 0,
+                    thickness: 2,
+                  ),
+                  Expanded(
+                      child: _nativeAdIsLoaded && searchString == ''
+                          ? Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                ConstrainedBox(
+                                  constraints: const BoxConstraints(
+                                    minWidth: 320, // minimum recommended width
+                                    minHeight:
+                                        320, // minimum recommended height
+                                    maxWidth: 400,
+                                    maxHeight: 400,
+                                  ),
+                                  child: AdWidget(ad: _nativeAd!),
+                                ),
+                                emptyList(),
+                              ],
+                            )
+                          : TabBarView(children: [
+                              showSearch(searchAllList),
+                              showSearch(searchMoviesList),
+                              showSearch(searchSeriesList),
+                              showSearch(searchPeopleList)
+                            ]))
+                ],
+              )),
+        ),
+      ),
     );
+  }
+
+  void loadAd() {
+    _nativeAd = NativeAd(
+        adUnitId: _adUnitId,
+        listener: NativeAdListener(
+          onAdLoaded: (ad) {
+            debugPrint('$NativeAd loaded.');
+            setState(() {
+              _nativeAdIsLoaded = true;
+            });
+          },
+          onAdFailedToLoad: (ad, error) {
+            // Dispose the ad here to free resources.
+            debugPrint('$NativeAd failed to load: $error');
+            ad.dispose();
+          },
+        ),
+        request: const AdRequest(),
+        // Styling
+        nativeTemplateStyle: NativeTemplateStyle(
+          // Required: Choose a template.
+          templateType: TemplateType.medium,
+        ));
+    _nativeAd?.load();
   }
 
   void getLists() async {
@@ -186,6 +243,13 @@ class _SearchViewState extends State<SearchView> {
                   builder: (context) => MovieInfoPage(
                         movie: item,
                       )),
+            );
+          } else {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) =>
+                      PersonInfoPage(personID: item['id'].toString())),
             );
           }
         },
@@ -325,5 +389,6 @@ class _SearchViewState extends State<SearchView> {
             padding: EdgeInsets.symmetric(vertical: 10),
           )
         : emptyList();
+    ;
   }
 }

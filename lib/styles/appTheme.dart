@@ -6,6 +6,7 @@ class AppTheme {
 
   static ThemeData dark = ThemeData(
     useMaterial3: false,
+    primaryColor: Colors.black,
     iconTheme: const IconThemeData(size: 30),
     textTheme: TextTheme(
       titleLarge: GoogleFonts.oswald(
@@ -46,6 +47,7 @@ class AppTheme {
 
   static ThemeData light = ThemeData(
     useMaterial3: false,
+    primaryColor: Colors.black,
     iconTheme: const IconThemeData(size: 30),
     textTheme: TextTheme(
       titleLarge: GoogleFonts.oswald(
