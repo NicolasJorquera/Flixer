@@ -11,6 +11,7 @@ import 'package:flixer/global/variables.dart';
 import 'widgets/homeFeed.dart';
 import 'widgets/providerBar.dart';
 import 'views/myListView.dart';
+import 'mesa/mesaHomeView.dart';
 import 'views/searchView.dart';
 
 import '../styles/appTheme.dart';
@@ -100,6 +101,19 @@ class MainApp extends State<MainPage> with SingleTickerProviderStateMixin {
                     width: 50,
                   ),
                   actions: [
+                    IconButton(
+                        tooltip: tr('mesa'),
+                        onPressed: () {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const MesaHomeView()));
+                        },
+                        icon: Icon(
+                          Icons.groups_outlined,
+                          color: Theme.of(context).colorScheme.onBackground,
+                          size: 25,
+                        )),
                     IconButton(
                         tooltip: tr('myList'),
                         onPressed: () {

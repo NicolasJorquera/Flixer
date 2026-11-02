@@ -1,0 +1,38 @@
+{
+  "rules": {
+    "mesas": {
+      "$code": {
+        ".read": "auth != null",
+        ".write": "auth != null && ((!data.exists() && newData.child('hostUid').val() === auth.uid) || data.child('hostUid').val() === auth.uid)",
+        ".validate": "$code.matches(/^[A-HJ-NP-Z2-9]{6}$/) && newData.hasChildren(['hostUid', 'createdAt', 'status', 'mediaType', 'deck'])",
+        "hostUid": { ".validate": "newData.isString()" },
+        "createdAt": { ".validate": "newData.isNumber() && newData.val() <= now" },
+        "status": { ".validate": "newData.isString() && newData.val().matches(/^(lobby|voting|done)$/)" },
+        "mediaType": { ".validate": "newData.val() === 'movie' || newData.val() === 'tv'" },
+        "deck": {
+          ".validate": "!newData.child('30').exists()",
+          "$i": { ".validate": "$i.matches(/^[0-9]{1,2}$/) && newData.child('id').isNumber()" }
+        },
+        "members": {
+          "$slot": {
+            ".write": "auth != null && ((!data.exists() && newData.child('uid').val() === auth.uid && root.child('mesas/' + $code + '/status').val() === 'lobby') || data.child('uid').val() === auth.uid)",
+            ".validate": "$slot.matches(/^[0-7]$/) && newData.hasChildren(['uid', 'name'])",
+            "uid": { ".validate": "newData.isString() && (!data.exists() || data.val() === newData.val())" },
+            "name": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 20" },
+            "done": { ".validate": "newData.isBoolean()" },
+            "$other": { ".validate": false }
+          }
+        },
+        "votes": {
+          "$slot": {
+            "$i": {
+              ".write": "auth != null && root.child('mesas/' + $code + '/members/' + $slot + '/uid').val() === auth.uid && root.child('mesas/' + $code + '/status').val() === 'voting'",
+              ".validate": "newData.isBoolean() && root.child('mesas/' + $code + '/deck/' + $i).exists()"
+            }
+          }
+        },
+        "$other": { ".validate": false }
+      }
+    }
+  }
+}
