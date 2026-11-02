@@ -5,7 +5,9 @@ import 'dart:async';
 import 'package:flixer/ads/interstitialAd.dart';
 import 'package:flixer/global/strings.dart';
 import 'package:flixer/global/variables.dart';
+import 'package:flixer/src/apiFunctions/catalog.dart';
 import 'package:flixer/src/apiFunctions/tmdb.dart';
+import 'package:flixer/src/myList.dart';
 import 'package:flixer/src/widgets/personInfo.dart';
 import 'package:flixer/src/widgets/statusViews.dart';
 import 'package:flutter/material.dart';
@@ -42,7 +44,7 @@ class _MovieInfoPageState extends State<MovieInfoPage> {
   void initState() {
     super.initState();
     movie = Map.of(widget.movie);
-    isTv = movie['media_type'] == 'tv' || movie['title'] == null;
+    isTv = mediaTypeOf(movie) == 'tv';
     InterstitialAdManager.instance.onDetailOpened();
     details = fetchDetails();
   }
@@ -307,15 +309,45 @@ class _MovieInfoPageState extends State<MovieInfoPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            SizedBox(
-                                width: MediaQuery.of(context).size.width,
-                                child: Text(
-                                  movie['title'] ?? movie['name'],
-                                  maxLines: 3,
-                                  overflow: TextOverflow.ellipsis,
-                                  style:
-                                      Theme.of(context).textTheme.displayLarge,
-                                )),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    movie['title'] ?? movie['name'],
+                                    maxLines: 3,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .displayLarge,
+                                  ),
+                                ),
+                                ValueListenableBuilder(
+                                  valueListenable: MyList.items,
+                                  builder: (context, _, __) {
+                                    final saved = MyList.contains(movie);
+                                    return IconButton(
+                                      tooltip: tr(saved
+                                          ? 'removeFromList'
+                                          : 'addToList'),
+                                      onPressed: () => MyList.toggle(movie),
+                                      icon: Icon(
+                                        saved
+                                            ? Icons.bookmark
+                                            : Icons.bookmark_border,
+                                        color: saved
+                                            ? Theme.of(context)
+                                                .colorScheme
+                                                .primary
+                                            : Theme.of(context)
+                                                .colorScheme
+                                                .onBackground,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
                             const SizedBox(
                               height: 10,
                             ),

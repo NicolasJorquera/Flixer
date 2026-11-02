@@ -6,12 +6,14 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:flixer/global/variables.dart';
+import 'package:flixer/src/myList.dart';
 import './src/app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   unawaited(MobileAds.instance.initialize());
   await loadSettings();
+  await MyList.load();
 
   runApp( const MainPage());
 }

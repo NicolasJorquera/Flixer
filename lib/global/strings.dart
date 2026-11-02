@@ -44,6 +44,25 @@ const Map<String, Map<String, String>> _strings = {
   'mute': {'es': 'Silenciar tráiler', 'en': 'Mute trailer'},
   'unmute': {'es': 'Activar sonido del tráiler', 'en': 'Unmute trailer'},
   'about': {'es': 'Datos', 'en': 'Data'},
+  'trending': {'es': 'Tendencias de la semana', 'en': 'Trending this week'},
+  'nowPlaying': {'es': 'En cines', 'en': 'In theaters'},
+  'upcoming': {'es': 'Próximamente', 'en': 'Coming soon'},
+  'onTheAir': {'es': 'En emisión', 'en': 'On the air'},
+  'popularOnStreaming': {'es': 'Populares en streaming', 'en': 'Popular on streaming'},
+  'topRated': {'es': 'Mejor valoradas', 'en': 'Top rated'},
+  'popular': {'es': 'Populares', 'en': 'Popular'},
+  'recent': {'es': 'Estrenos recientes', 'en': 'Recent releases'},
+  'seeAll': {'es': 'Ver todo', 'en': 'See all'},
+  'allPlatforms': {'es': 'Todas', 'en': 'All'},
+  'allGenres': {'es': 'Todos', 'en': 'All'},
+  'sectionError': {'es': 'No pudimos cargar esta sección', 'en': "Couldn't load this section"},
+  'myList': {'es': 'Mi lista', 'en': 'My list'},
+  'myListEmpty': {
+    'es': 'Guarda películas y series con el marcador para verlas aquí',
+    'en': 'Save movies and series with the bookmark to see them here'
+  },
+  'addToList': {'es': 'Agregar a mi lista', 'en': 'Add to my list'},
+  'removeFromList': {'es': 'Quitar de mi lista', 'en': 'Remove from my list'},
 };
 
 /// UI text in the user's language, falling back to English.
