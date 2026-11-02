@@ -27,7 +27,7 @@ Guarda el `.jks` y sus contraseñas en tu gestor de contraseñas. Si se vuelven 
 
 ### 2. Pedir el reset de la upload key en Play Console
 
-En Play Console, entra a Flixer → **Test and release → App integrity → App signing** y elige **Request upload key reset**. Sube `flixer-upload-cert.pem`.
+En Play Console, entra a Flixer → **Test and release → App integrity** y pulsa **Go to Protected with Play** (Google movió ahí la configuración de integridad). En la sección de firma de la app (**App signing**), elige **Request upload key reset** y sube `flixer-upload-cert.pem`.
 
 Esto solo funciona si la app usa **Play App Signing** (es decir, Google guarda la clave de firma final). Si en esa pantalla no aparece la opción, la app firma con la clave original y no hay forma de actualizarla. En ese caso habría que publicarla como app nueva, con otro `applicationId`.
 
