@@ -1,3 +1,3 @@
-/* TMDB Authentication*/
- String language = 'es';
- String region = 'CL';
+/* User settings, loaded from SharedPreferences in main() */
+String language = 'es';
+String region = 'CL';

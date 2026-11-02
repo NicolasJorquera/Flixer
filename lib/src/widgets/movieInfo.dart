@@ -1,44 +1,39 @@
 // ignore_for_file: prefer_interpolation_to_compose_strings
 
 import 'dart:async';
-import 'dart:convert';
-import 'dart:math';
 
+import 'package:flixer/ads/interstitialAd.dart';
+import 'package:flixer/global/strings.dart';
+import 'package:flixer/global/variables.dart';
+import 'package:flixer/src/apiFunctions/tmdb.dart';
 import 'package:flixer/src/widgets/personInfo.dart';
+import 'package:flixer/src/widgets/statusViews.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
-import 'package:http/http.dart' as http;
 
 import 'package:flixer/ads/adaptativeBannerAd.dart';
-import 'dart:io';
-
-import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 class MovieInfoPage extends StatefulWidget {
   final dynamic movie;
   const MovieInfoPage({super.key, required this.movie});
   @override
-  _MovieInfoPageState createState() => _MovieInfoPageState(movie);
+  _MovieInfoPageState createState() => _MovieInfoPageState();
 }
 
 class _MovieInfoPageState extends State<MovieInfoPage> {
-  dynamic _controller = '';
-  final dynamic movie;
-  List videos = [];
-  List cast = [];
+  YoutubePlayerController? _controller;
+  late Map movie;
+  late bool isTv;
+  late Future<void> details;
   bool isVideoEnded = false;
   bool delayTrailerEnded = false;
+  bool muted = true;
+  Timer? _trailerTimer;
+  List cast = [];
   List recommendations = [];
   List platforms = [];
   String genres = '';
-  _MovieInfoPageState(this.movie);
-
-  InterstitialAd? _interstitialAd;
-
-  final adUnitId = Platform.isAndroid
-      ? 'ca-app-pub-3038495459046159/9335491973'
-      : 'ca-app-pub-3940256099942544/4411468910';
 
   static const image_url = 'https://image.tmdb.org/t/p/w500';
   static const image_original = 'https://image.tmdb.org/t/p/original';
@@ -46,26 +41,18 @@ class _MovieInfoPageState extends State<MovieInfoPage> {
   @override
   void initState() {
     super.initState();
-    loadAd();
-    fetchVideos();
-    fetchCast();
-    fetchRecommendations();
-    fetchPlatforms();
-    fetchGenres();
-
-    _delayTrailer();
+    movie = Map.of(widget.movie);
+    isTv = movie['media_type'] == 'tv' || movie['title'] == null;
+    InterstitialAdManager.instance.onDetailOpened();
+    details = fetchDetails();
   }
 
-  void _delayTrailer() {
-// Timer.periodic will execute the code which is in the callback,
-// in this case, we are increasing the sec state every second,
-// As you want to execute it every minute, put Duration(seconds: 60)
-
-    Timer(const Duration(seconds: 5), () {
-      setState(() {
-        delayTrailerEnded = true;
-      });
-    });
+  @override
+  void dispose() {
+    _trailerTimer?.cancel();
+    _controller?.dispose();
+    InterstitialAdManager.instance.onDetailClosed();
+    super.dispose();
   }
 
   @override
@@ -75,39 +62,106 @@ class _MovieInfoPageState extends State<MovieInfoPage> {
     }
   }
 
+  /// Details, trailer, cast, recommendations and providers in one request.
+  Future<void> fetchDetails() async {
+    final json = await tmdbGet('/${isTv ? 'tv' : 'movie'}/${movie['id']}', {
+      'append_to_response': 'videos,credits,recommendations,watch/providers',
+      // Without this, a Spanish request only returns Spanish trailers.
+      'include_video_language': '$language,en,null',
+    });
+
+    final List videos = (json['videos']?['results'] ?? [])
+        .where((video) => video['site'] == 'YouTube')
+        .toList();
+    final trailer = videos.firstWhere((video) => video['type'] == 'Trailer',
+        orElse: () => videos.isEmpty ? null : videos.first);
+
+    setState(() {
+      for (final key in const [
+        'title',
+        'name',
+        'overview',
+        'vote_average',
+        'release_date',
+        'first_air_date',
+        'backdrop_path'
+      ]) {
+        if (json[key] != null) movie[key] = json[key];
+      }
+      genres = (json['genres'] as List? ?? [])
+          .map((genre) => genre['name'])
+          .join(' - ');
+      cast = json['credits']?['cast'] ?? [];
+      recommendations = (json['recommendations']?['results'] ?? [])
+          .where((item) => item['poster_path'] != null)
+          .toList();
+      platforms = parsePlatforms(json['watch/providers']?['results']?[region]);
+
+      if (trailer != null && _controller == null) {
+        _controller = YoutubePlayerController(
+          initialVideoId: trailer['key'],
+          flags: const YoutubePlayerFlags(
+              autoPlay: true,
+              mute: true,
+              hideControls: true,
+              hideThumbnail: true,
+              enableCaption: false,
+              useHybridComposition: true),
+        );
+        _trailerTimer = Timer(const Duration(seconds: 5), () {
+          setState(() {
+            delayTrailerEnded = true;
+          });
+        });
+      }
+    });
+  }
+
+  /// One entry per provider, tagged with how it is offered (stream first).
+  List parsePlatforms(Map? country) {
+    final List result = [];
+    if (country == null) return result;
+    for (final type in const ['flatrate', 'free', 'ads', 'rent', 'buy']) {
+      for (final provider in (country[type] ?? [])) {
+        if (provider['logo_path'] != null &&
+            !result.any((p) => p['provider_id'] == provider['provider_id'])) {
+          result.add({...provider, 'type': type});
+        }
+      }
+    }
+    return result;
+  }
+
+  void pauseTrailer() {
+    _controller?.pause();
+    setState(() {
+      isVideoEnded = true;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
     ));
 
-    _interstitialAd?.show();
-
     return SafeArea(
       child: Scaffold(
           backgroundColor: Theme.of(context).colorScheme.background,
           body: FutureBuilder(
-            future: Future.delayed(const Duration(seconds: 1)),
+            future: details,
             builder: (context, snapshot) {
-              if (cast.isEmpty &&
-                  recommendations.isEmpty &&
-                  platforms.isEmpty) {
-                return Center(
-                  child: CircularProgressIndicator(
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                );
+              if (snapshot.hasError) {
+                return ErrorView(
+                    onRetry: () => setState(() {
+                          details = fetchDetails();
+                        }));
+              } else if (snapshot.connectionState != ConnectionState.done) {
+                return const LoadingView();
               } else {
                 return PopScope(
-                  onPopInvoked: (didPop) {
-                    if (videos.isNotEmpty) {
-                      setState(() {
-                        _controller.pause();
-                      });
-                      setState(() {
-                        isVideoEnded = true;
-                      });
-                    }
+                  onPopInvokedWithResult: (didPop, result) {
+                    _controller?.pause();
                   },
                   child: ListView(
                     padding: EdgeInsets.only(top: 0),
@@ -132,7 +186,7 @@ class _MovieInfoPageState extends State<MovieInfoPage> {
                               blendMode: BlendMode.dstIn,
                               child: movie['backdrop_path'] == null
                                   ? Container()
-                                  : (videos.isEmpty && !isVideoEnded) ||
+                                  : _controller == null ||
                                           isVideoEnded ||
                                           !delayTrailerEnded
                                       ? Image.network(
@@ -155,7 +209,7 @@ class _MovieInfoPageState extends State<MovieInfoPage> {
                                               MediaQuery.of(context).size.width,
                                           child: YoutubePlayer(
                                             controlsTimeOut: Duration.zero,
-                                            controller: _controller,
+                                            controller: _controller!,
                                             showVideoProgressIndicator: false,
                                             onReady: () {
                                               setState(() {
@@ -177,6 +231,7 @@ class _MovieInfoPageState extends State<MovieInfoPage> {
                               child: ElevatedButton(
                                 child: Icon(
                                   Icons.arrow_back,
+                                  semanticLabel: tr('back'),
                                   color: Theme.of(context)
                                       .colorScheme
                                       .onBackground,
@@ -199,6 +254,7 @@ class _MovieInfoPageState extends State<MovieInfoPage> {
                               child: ElevatedButton(
                                 child: Icon(
                                   Icons.home_outlined,
+                                  semanticLabel: tr('home'),
                                   color: Theme.of(context)
                                       .colorScheme
                                       .onBackground,
@@ -212,11 +268,38 @@ class _MovieInfoPageState extends State<MovieInfoPage> {
                                         .withOpacity(0.5),
                                     shadowColor: Colors.transparent),
                                 onPressed: () {
-                                  loadAd();
                                   Navigator.popUntil(
                                       context, (route) => route.isFirst);
                                 },
                               )),
+                          if (_controller != null &&
+                              delayTrailerEnded &&
+                              !isVideoEnded)
+                            Positioned(
+                                bottom: 8,
+                                right: 8,
+                                child: IconButton(
+                                  tooltip: tr(muted ? 'unmute' : 'mute'),
+                                  style: IconButton.styleFrom(
+                                      backgroundColor: Theme.of(context)
+                                          .colorScheme
+                                          .background
+                                          .withOpacity(0.5)),
+                                  onPressed: () {
+                                    setState(() {
+                                      muted
+                                          ? _controller!.unMute()
+                                          : _controller!.mute();
+                                      muted = !muted;
+                                    });
+                                  },
+                                  icon: Icon(
+                                    muted ? Icons.volume_off : Icons.volume_up,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onBackground,
+                                  ),
+                                )),
                         ],
                       ),
                       Padding(
@@ -254,7 +337,8 @@ class _MovieInfoPageState extends State<MovieInfoPage> {
                                           width: 5,
                                         ),
                                         Text(
-                                          movie['vote_average'].toString() +
+                                          (movie['vote_average'] as num? ?? 0)
+                                                  .toStringAsFixed(1) +
                                               '/10',
                                           style: TextStyle(
                                               color: Theme.of(context)
@@ -317,7 +401,9 @@ class _MovieInfoPageState extends State<MovieInfoPage> {
                       Padding(
                         padding: const EdgeInsets.only(left: 10, right: 10),
                         child: Text(
-                          movie['overview'],
+                          (movie['overview'] ?? '').isEmpty
+                              ? tr('noOverview')
+                              : movie['overview'],
                           style: TextStyle(
                               color: Theme.of(context).colorScheme.onBackground,
                               fontSize: 15),
@@ -330,7 +416,7 @@ class _MovieInfoPageState extends State<MovieInfoPage> {
                       Padding(
                         padding: const EdgeInsets.all(5),
                         child: Text(
-                          'Platforms',
+                          tr('whereToWatch'),
                           style: TextStyle(
                               color: Theme.of(context).colorScheme.onBackground,
                               fontSize: 20),
@@ -343,30 +429,47 @@ class _MovieInfoPageState extends State<MovieInfoPage> {
                           ? Padding(
                               padding: const EdgeInsets.all(10),
                               child: Text(
-                                  'No platforms available in your region',
+                                  tr('noPlatforms'),
                                   style: TextStyle(
                                       color: Theme.of(context)
                                           .colorScheme
                                           .surface)),
                             )
                           : SizedBox(
-                              height: 60,
+                              height: 82,
                               child: ListView.separated(
                                   scrollDirection: Axis.horizontal,
                                   itemBuilder: (context, index) {
-                                    return Card(
-                                      shadowColor: Colors.transparent,
-                                      color: Colors.transparent,
-                                      shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10)),
-                                      clipBehavior: Clip.hardEdge,
-                                      child: Image.network(
-                                        image_url +
-                                            platforms[index]['logo_path'],
-                                        height: 50,
-                                        width: 50,
-                                        fit: BoxFit.cover,
+                                    return Semantics(
+                                      label:
+                                          '${platforms[index]['provider_name']}, ${tr(platforms[index]['type'])}',
+                                      excludeSemantics: true,
+                                      child: Column(
+                                        children: [
+                                          Card(
+                                            shadowColor: Colors.transparent,
+                                            color: Colors.transparent,
+                                            shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(10)),
+                                            clipBehavior: Clip.hardEdge,
+                                            child: Image.network(
+                                              image_url +
+                                                  platforms[index]['logo_path'],
+                                              height: 50,
+                                              width: 50,
+                                              fit: BoxFit.cover,
+                                            ),
+                                          ),
+                                          Text(
+                                            tr(platforms[index]['type']),
+                                            style: TextStyle(
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onBackground,
+                                                fontSize: 11),
+                                          ),
+                                        ],
                                       ),
                                     );
                                   },
@@ -376,6 +479,15 @@ class _MovieInfoPageState extends State<MovieInfoPage> {
                                     );
                                   },
                                   itemCount: platforms.length)),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 10, top: 5),
+                        child: Text(
+                          tr('justWatch'),
+                          style: TextStyle(
+                              color: Theme.of(context).colorScheme.secondary,
+                              fontSize: 11),
+                        ),
+                      ),
                       Divider(
                         color: Theme.of(context).colorScheme.secondary,
                         height: 20,
@@ -383,7 +495,7 @@ class _MovieInfoPageState extends State<MovieInfoPage> {
                       Padding(
                         padding: const EdgeInsets.all(5),
                         child: Text(
-                          'Cast',
+                          tr('cast'),
                           style: TextStyle(
                               color: Theme.of(context).colorScheme.onBackground,
                               fontSize: 20),
@@ -400,14 +512,7 @@ class _MovieInfoPageState extends State<MovieInfoPage> {
                                 return Stack(children: <Widget>[
                                   GestureDetector(
                                     onTap: () {
-                                      if (videos.isNotEmpty) {
-                                        setState(() {
-                                          _controller.pause();
-                                        });
-                                        setState(() {
-                                          isVideoEnded = true;
-                                        });
-                                      }
+                                      pauseTrailer();
                                       Navigator.push(
                                           context,
                                           MaterialPageRoute(
@@ -464,7 +569,7 @@ class _MovieInfoPageState extends State<MovieInfoPage> {
                                     top: 160,
                                     left: 5,
                                     child: Text(
-                                      cast[index]['name'] + ' as',
+                                      cast[index]['name'] + tr('as'),
                                       style: TextStyle(
                                           color: Theme.of(context)
                                               .colorScheme
@@ -476,7 +581,7 @@ class _MovieInfoPageState extends State<MovieInfoPage> {
                                     top: 180,
                                     left: 5,
                                     child: Text(
-                                      cast[index]['character'],
+                                      cast[index]['character'] ?? '',
                                       style: TextStyle(
                                           color: Theme.of(context)
                                               .colorScheme
@@ -499,7 +604,7 @@ class _MovieInfoPageState extends State<MovieInfoPage> {
                       Padding(
                         padding: const EdgeInsets.all(5),
                         child: Text(
-                          'Related',
+                          tr('related'),
                           style: TextStyle(
                               color: Theme.of(context).colorScheme.onBackground,
                               fontSize: 20),
@@ -516,14 +621,7 @@ class _MovieInfoPageState extends State<MovieInfoPage> {
                                 return Stack(children: <Widget>[
                                   GestureDetector(
                                     onTap: () {
-                                      if (videos.isNotEmpty) {
-                                        setState(() {
-                                          _controller.pause();
-                                        });
-                                        setState(() {
-                                          isVideoEnded = true;
-                                        });
-                                      }
+                                      pauseTrailer();
 
                                       Navigator.push(
                                           context,
@@ -580,241 +678,5 @@ class _MovieInfoPageState extends State<MovieInfoPage> {
               color: Theme.of(context).colorScheme.background,
               child: AdaptativeBannerAdWidget())),
     );
-  }
-
-  void fetchGenres() async {
-    const api_url = 'https://api.themoviedb.org/3';
-    const api_Key = '36e984f2374fdfcbcea58dba752094dc';
-
-    String url = '';
-    if (movie['name'] == null) {
-      url =
-          api_url + '/movie/' + movie['id'].toString() + '?api_key=' + api_Key;
-    } else {
-      url = api_url + '/tv/' + movie['id'].toString() + '?api_key=' + api_Key;
-    }
-
-    final uri = Uri.parse(url);
-    final response = await http.get(uri);
-    final body = response.body;
-    final json = jsonDecode(body);
-    final gnres = json['genres'];
-
-    for (var index = 0; index < gnres.length; index++) {
-      if (index == 0) {
-        genres = gnres[index]['name'];
-      } else {
-        genres = genres + ' - ' + gnres[index]['name'];
-      }
-    }
-    ;
-  }
-
-  void fetchVideos() async {
-    const api_url = 'https://api.themoviedb.org/3';
-    const api_Key = '36e984f2374fdfcbcea58dba752094dc';
-
-    String url = '';
-
-    if (movie['name'] == null) {
-      url = api_url +
-          '/movie/' +
-          movie['id'].toString() +
-          '/videos?api_key=' +
-          api_Key;
-    } else {
-      url = api_url +
-          '/tv/' +
-          movie['id'].toString() +
-          '/videos?api_key=' +
-          api_Key;
-    }
-
-    final uri = Uri.parse(url);
-    final response = await http.get(uri);
-    final body = response.body;
-    final json = jsonDecode(body);
-    final vds = json['results'];
-    setState(() {
-      videos = vds;
-    });
-    if (videos.length > 0) {
-      dynamic trailer;
-      for (var videoData in videos) {
-        if (videoData['type'] == 'Trailer') {
-          trailer = videoData;
-        }
-        if (videos.last == videoData && trailer == null) {
-          trailer = videoData;
-        }
-      }
-      setState(() {
-        _controller = YoutubePlayerController(
-          initialVideoId: trailer['key'],
-          flags: const YoutubePlayerFlags(
-              autoPlay: true,
-              mute: false,
-              hideControls: true,
-              hideThumbnail: true,
-              enableCaption: false,
-              useHybridComposition: true),
-        );
-      });
-    }
-  }
-
-  void fetchPlatforms() async {
-    const api_url = 'https://api.themoviedb.org/3';
-    const api_Key = '36e984f2374fdfcbcea58dba752094dc';
-
-    String url = '';
-    if (movie['name'] == null) {
-      url = api_url +
-          '/movie/' +
-          movie['id'].toString() +
-          '/watch/providers?api_key=' +
-          api_Key;
-    } else {
-      url = api_url +
-          '/tv/' +
-          movie['id'].toString() +
-          '/watch/providers?api_key=' +
-          api_Key;
-    }
-
-    final uri = Uri.parse(url);
-    final response = await http.get(uri);
-    final body = response.body;
-    final json = jsonDecode(body);
-    final pltforms = json['results'];
-    final pltformsCountry = pltforms['CL'];
-    if (pltformsCountry != null) {
-      pltformsCountry.forEach((key, value) {
-        if (value is List) {
-          for (var element in value) {
-            if (element['logo_path'] != null &&
-                !platforms.any((platform) =>
-                    platform['provider_id'] == element['provider_id'])) {
-              setState(() {
-                platforms.add(element);
-              });
-            }
-          }
-        }
-      });
-    }
-  }
-
-  void fetchRecommendations() async {
-    const api_url = 'https://api.themoviedb.org/3';
-    const api_Key = '36e984f2374fdfcbcea58dba752094dc';
-
-    String url = '';
-    if (movie['name'] == null) {
-      url = api_url +
-          '/movie/' +
-          movie['id'].toString() +
-          '/recommendations?api_key=' +
-          api_Key;
-    } else {
-      url = api_url +
-          '/tv/' +
-          movie['id'].toString() +
-          '/recommendations?api_key=' +
-          api_Key;
-    }
-
-    final uri = Uri.parse(url);
-    final response = await http.get(uri);
-    final body = response.body;
-    final json = jsonDecode(body);
-    final recms = json['results'];
-    setState(() {
-      recommendations = recms;
-    });
-  }
-
-  void fetchCast() async {
-    const api_url = 'https://api.themoviedb.org/3';
-    const api_Key = '36e984f2374fdfcbcea58dba752094dc';
-
-    String url = '';
-    if (movie['name'] == null) {
-      url = api_url +
-          '/movie/' +
-          movie['id'].toString() +
-          '/credits?api_key=' +
-          api_Key;
-    } else {
-      url = api_url +
-          '/tv/' +
-          movie['id'].toString() +
-          '/credits?api_key=' +
-          api_Key;
-    }
-
-    final uri = Uri.parse(url);
-    final response = await http.get(uri);
-    final body = response.body;
-    final json = jsonDecode(body);
-    final cst = json['cast'];
-    setState(() {
-      cast = cst;
-    });
-  }
-
-  void loadAd() {
-    InterstitialAd.load(
-        adUnitId: adUnitId,
-        request: const AdRequest(),
-        adLoadCallback: InterstitialAdLoadCallback(
-          // Called when an ad is successfully received.
-          onAdLoaded: (ad) {
-            debugPrint('$ad loaded.');
-            // Keep a reference to the ad so you can show it later.
-            var rnd = Random().nextInt(100);
-            if (rnd > 70) {
-              setState(() {
-                _controller.pause();
-              });
-              setState(() {
-                isVideoEnded = true;
-              });
-              _showInterstitialAd(ad);
-            }
-          },
-
-          // Called when an ad request failed.
-          onAdFailedToLoad: (LoadAdError error) {
-            debugPrint('InterstitialAd failed to load: $error');
-          },
-        ));
-  }
-
-  void _showInterstitialAd(InterstitialAd ad) {
-    _interstitialAd = ad;
-
-    _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
-        onAdShowedFullScreenContent: (ad) => print('ad showed $ad'),
-
-        //when ad went closes
-        onAdDismissedFullScreenContent: (ad) {
-          //run something
-          print('Terminooooooooooooooooooooooooooooooooooooooo la ad');
-          fetchVideos();
-          _delayTrailer();
-          setState(() {
-            _controller.play();
-          });
-          setState(() {
-            isVideoEnded = false;
-          });
-        },
-        onAdFailedToShowFullScreenContent: (ad, error) {
-          ad.dispose();
-          
-        });
-    _interstitialAd!.show();
-    _interstitialAd = null;
   }
 }

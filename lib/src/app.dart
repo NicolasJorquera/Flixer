@@ -5,11 +5,11 @@ import 'package:flixer/ads/adaptativeBannerAd.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:flixer/global/strings.dart';
 import 'package:flixer/global/variables.dart';
 
 import 'widgets/discover.dart';
-import 'pages/matchPage/matchPage.dart';
-import 'pages/userPage/userPage.dart';
+import 'widgets/statusViews.dart';
 import 'views/searchView.dart';
 
 import '../styles/appTheme.dart';
@@ -22,76 +22,60 @@ class MainPage extends StatefulWidget {
 }
 
 class MainApp extends State<MainPage> with SingleTickerProviderStateMixin {
-  int selectedIndex = 0;
   ThemeMode mode = ThemeMode.dark;
   bool switchTheme = false;
-  List movies = [];
-  List series = [];
+  late Future<List> movies;
+  late Future<List> series;
   final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
-  String lang = '';
-  String watchReg = '';
 
   @override
   void initState() {
     super.initState();
+    movies = getDiscoverMovies();
+    series = getDiscoverSeries();
     getPreferences();
-    // getMovies();
-    // getSeries();
   }
 
   void getPreferences() async {
     SharedPreferences prefs = await _prefs;
-    if (!prefs.containsKey('language')) {
-      prefs.setString('language', 'en');
-    }
-    if (!prefs.containsKey('watchRegion')) {
-      prefs.setString('watchRegion', 'CL');
-    }
-    if (!prefs.containsKey('themeMode')) {
-      prefs.setString('themeMode', 'dark');
-    }
-
     setState(() {
-      lang = prefs.getString('language')!;
-      watchReg = prefs.getString('watchRegion')!;
-      mode = prefs.getString('themeMode') == 'dark'
-          ? ThemeMode.dark
-          : ThemeMode.light;
-    });
-
-    getMovies();
-    getSeries();
-  }
-
-  void getMovies() async {
-    List mvs = await getDiscoverMovies();
-    setState(() {
-      movies = mvs;
+      mode = prefs.getString('themeMode') == 'light'
+          ? ThemeMode.light
+          : ThemeMode.dark;
     });
   }
 
-  void getSeries() async {
-    List srs = await getDiscoverSeries();
+  Future<void> getMovies() {
     setState(() {
-      series = srs;
+      movies = getDiscoverMovies();
     });
+    return movies.then((_) {}, onError: (_) {});
+  }
+
+  Future<void> getSeries() {
+    setState(() {
+      series = getDiscoverSeries();
+    });
+    return series.then((_) {}, onError: (_) {});
+  }
+
+  Widget discoverTab(Future<List> future, Future<void> Function() onRefresh) {
+    return FutureBuilder<List>(
+      future: future,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return ErrorView(onRetry: onRefresh);
+        }
+        if (!snapshot.hasData) {
+          return const LoadingView();
+        }
+        return Discover(list: snapshot.data!, onRefresh: onRefresh);
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // final children = [
-    //   Discover(
-    //     list: movies,
-    //     onRefresh: () => getMovies(),
-    //   ),
-    //   Discover(
-    //     list: series,
-    //     onRefresh: () => getSeries(),
-    //   ),
-    //   const MatchPage(),
-    //   const UserPage()
-    // ];
-
     switchTheme = mode == ThemeMode.dark ? false : true;
 
     return MaterialApp(
@@ -104,6 +88,7 @@ class MainApp extends State<MainPage> with SingleTickerProviderStateMixin {
             initialIndex: 0,
             length: 2,
             child: Scaffold(
+                backgroundColor: Theme.of(context).colorScheme.background,
                 appBar: AppBar(
                   backgroundColor: Theme.of(context).colorScheme.background,
                   leading: Image.asset(
@@ -131,9 +116,16 @@ class MainApp extends State<MainPage> with SingleTickerProviderStateMixin {
                           showModalBottomSheet(
                             context: context,
                             builder: (context) {
-                              return Padding(
-                                padding: const EdgeInsets.only(
-                                    left: 15, right: 15, bottom: 15),
+                              return StatefulBuilder(
+                                  builder: (context, setSheetState) =>
+                                      Padding(
+                                padding: EdgeInsets.only(
+                                    left: 15,
+                                    right: 15,
+                                    bottom: 15 +
+                                        MediaQuery.of(context)
+                                            .viewPadding
+                                            .bottom),
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   mainAxisSize: MainAxisSize.min,
@@ -174,7 +166,7 @@ class MainApp extends State<MainPage> with SingleTickerProviderStateMixin {
                                             ),
                                           ),
                                           Text(
-                                            'Language',
+                                            tr('language'),
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .displayMedium
@@ -245,6 +237,7 @@ class MainApp extends State<MainPage> with SingleTickerProviderStateMixin {
                                                   await _prefs;
                                               prefs.setString(
                                                   'language', value);
+                                              setSheetState(() {});
                                               getMovies();
                                               getSeries();
                                             },
@@ -268,7 +261,7 @@ class MainApp extends State<MainPage> with SingleTickerProviderStateMixin {
                                             ),
                                           ),
                                           Text(
-                                            'Region',
+                                            tr('region'),
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .displayMedium
@@ -362,7 +355,7 @@ class MainApp extends State<MainPage> with SingleTickerProviderStateMixin {
                                             ),
                                           ),
                                           Text(
-                                            'Theme',
+                                            tr('theme'),
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .displayMedium
@@ -372,7 +365,7 @@ class MainApp extends State<MainPage> with SingleTickerProviderStateMixin {
                                         Row(
                                           children: [
                                             Text(
-                                              'Dark',
+                                              tr('dark'),
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .displaySmall
@@ -385,6 +378,9 @@ class MainApp extends State<MainPage> with SingleTickerProviderStateMixin {
                                             Switch(
                                                 value: switchTheme,
                                                 onChanged: (value) async {
+                                                  setSheetState(() {
+                                                    switchTheme = value;
+                                                  });
                                                   setState(() {
                                                     mode =
                                                         mode == ThemeMode.dark
@@ -397,7 +393,7 @@ class MainApp extends State<MainPage> with SingleTickerProviderStateMixin {
                                                       value ? 'light' : 'dark');
                                                 }),
                                             Text(
-                                              'Light',
+                                              tr('light'),
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .displaySmall
@@ -410,10 +406,39 @@ class MainApp extends State<MainPage> with SingleTickerProviderStateMixin {
                                           ],
                                         )
                                       ],
-                                    )
+                                    ),
+                                    Divider(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .secondary,
+                                      height: 30,
+                                    ),
+                                    Row(children: [
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 15),
+                                        child: Icon(
+                                          Icons.info_outline,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onBackground,
+                                        ),
+                                      ),
+                                      Expanded(
+                                        // Attribution required by the TMDB API terms.
+                                        child: Text(
+                                          'This product uses the TMDB API but is not endorsed or certified by TMDB. '
+                                          '${tr('justWatch')}.',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .displaySmall
+                                              ?.copyWith(fontSize: 13),
+                                        ),
+                                      ),
+                                    ])
                                   ],
                                 ),
-                              );
+                              ));
                             },
                             shape: const RoundedRectangleBorder(
                                 borderRadius: BorderRadius.only(
@@ -430,38 +455,19 @@ class MainApp extends State<MainPage> with SingleTickerProviderStateMixin {
                   bottom: TabBar(
                       labelStyle: Theme.of(context).textTheme.displayMedium,
                       indicatorColor: Theme.of(context).colorScheme.primary,
-                      tabs: const [
+                      tabs: [
                         Tab(
-                          text: 'Movies',
+                          text: tr('movies'),
                         ),
                         Tab(
-                          text: 'Series',
+                          text: tr('series'),
                         )
                       ]),
                 ),
-                body: FutureBuilder(
-                  future: Future.delayed(const Duration(seconds: 1)),
-                  builder: (context, snapshot) {
-                    if (movies.isEmpty && series.isEmpty) {
-                      return Center(
-                        child: CircularProgressIndicator(
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      );
-                    } else {
-                      return TabBarView(children: [
-                        Discover(
-                          list: movies,
-                          onRefresh: () => getMovies(),
-                        ),
-                        Discover(
-                          list: series,
-                          onRefresh: () => getSeries(),
-                        ),
-                      ]);
-                    }
-                  },
-                ),
+                body: TabBarView(children: [
+                  discoverTab(movies, getMovies),
+                  discoverTab(series, getSeries),
+                ]),
                 bottomNavigationBar: Container(
                     color: Theme.of(context).colorScheme.background,
                     child: AdaptativeBannerAdWidget())
