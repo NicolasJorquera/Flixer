@@ -11,10 +11,10 @@ dependencies:
     sdk: flutter
   flutter_launcher_icons: ^0.13.1
   google_fonts: ^6.1.0
-  google_mobile_ads: ^4.0.0
+  google_mobile_ads: ^9.2.0
   http: ^1.2.0
   shared_preferences: ^2.2.2
-  youtube_player_flutter: ^8.1.2
+  youtube_player_flutter: ^9.1.1
 
 dev_dependencies:
   flutter_test:
