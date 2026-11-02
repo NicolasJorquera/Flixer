@@ -1,10 +1,13 @@
+import 'dart:async';
 import 'dart:math';
 
-import 'package:flixer/ads/adaptativeBannerAd.dart';
+import 'package:flixer/global/strings.dart';
 import 'package:flixer/src/widgets/movieInfo.dart';
+import 'package:flixer/src/widgets/statusViews.dart';
 import 'package:flixer/src/widgets/personInfo.dart';
 import 'package:flutter/material.dart';
 import 'package:flixer/src/apiFunctions/search.dart';
+import 'package:flixer/src/apiFunctions/tmdb.dart';
 
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'dart:io' show Platform;
@@ -22,6 +25,9 @@ class _SearchViewState extends State<SearchView> {
   List searchMoviesList = [];
   List searchSeriesList = [];
   List searchPeopleList = [];
+  bool searchFailed = false;
+  Timer? _debounce;
+  int _searchId = 0;
   late FocusNode focusNode;
 
   final String _adUnitId = Platform.isAndroid
@@ -38,12 +44,12 @@ class _SearchViewState extends State<SearchView> {
 
     focusNode = FocusNode();
     focusNode.requestFocus();
-    getLists();
   }
 
   @override
   void dispose() {
     super.dispose();
+    _debounce?.cancel();
     focusNode.dispose();
     _nativeAd?.dispose();
     _nativeAd = null;
@@ -83,7 +89,7 @@ class _SearchViewState extends State<SearchView> {
                           shadowColor: const MaterialStatePropertyAll(
                               Colors.transparent),
                           focusNode: focusNode,
-                          hintText: 'Search...',
+                          hintText: tr('search'),
                           hintStyle: MaterialStatePropertyAll(TextStyle(
                               color: Theme.of(context).colorScheme.onSurface,
                               fontSize: 17)),
@@ -100,10 +106,10 @@ class _SearchViewState extends State<SearchView> {
                               searchString = value;
                             });
 
-                            getLists();
-                            // if (value == '') {
-                            //   fetchTrendingMovies();
-                            // }
+                            // Wait until the user stops typing.
+                            _debounce?.cancel();
+                            _debounce = Timer(
+                                const Duration(milliseconds: 400), getLists);
                           },
                         ))
                       ],
@@ -115,18 +121,18 @@ class _SearchViewState extends State<SearchView> {
                   TabBar(
                     labelColor: Theme.of(context).colorScheme.onBackground,
                     indicatorColor: Theme.of(context).colorScheme.primary,
-                    tabs: const <Widget>[
+                    tabs: <Widget>[
                       Tab(
-                        text: 'All',
+                        text: tr('all'),
                       ),
                       Tab(
-                        text: 'Movies',
+                        text: tr('movies'),
                       ),
                       Tab(
-                        text: 'Series',
+                        text: tr('series'),
                       ),
                       Tab(
-                        text: 'People',
+                        text: tr('people'),
                       )
                     ],
                   ),
@@ -152,6 +158,8 @@ class _SearchViewState extends State<SearchView> {
                                 emptyList(),
                               ],
                             )
+                          : searchFailed
+                          ? ErrorView(onRetry: getLists)
                           : TabBarView(children: [
                               showSearch(searchAllList),
                               showSearch(searchMoviesList),
@@ -191,11 +199,39 @@ class _SearchViewState extends State<SearchView> {
   }
 
   void getLists() async {
-    searchAllList = await searchAll(searchString);
-    searchMoviesList = await searchMovies(searchString);
-    searchSeriesList = await searchSeries(searchString);
-    searchPeopleList = await searchPeople(searchString);
-    setState(() {});
+    final query = searchString.trim();
+    // Responses can arrive out of order; only the latest search is shown.
+    final id = ++_searchId;
+    if (query.isEmpty) {
+      setState(() {
+        searchFailed = false;
+        searchAllList = [];
+        searchMoviesList = [];
+        searchSeriesList = [];
+        searchPeopleList = [];
+      });
+      return;
+    }
+
+    try {
+      final results = await searchAll(query);
+      if (id != _searchId) return;
+      setState(() {
+        searchFailed = false;
+        searchAllList = results;
+        searchMoviesList =
+            results.where((item) => item['media_type'] == 'movie').toList();
+        searchSeriesList =
+            results.where((item) => item['media_type'] == 'tv').toList();
+        searchPeopleList =
+            results.where((item) => item['media_type'] == 'person').toList();
+      });
+    } on TmdbException {
+      if (id != _searchId) return;
+      setState(() {
+        searchFailed = true;
+      });
+    }
   }
 
   String generateRandomString(int len) {
@@ -220,8 +256,8 @@ class _SearchViewState extends State<SearchView> {
             padding: const EdgeInsets.all(10),
             child: Text(
               searchString == ''
-                  ? 'Write someting to search...'
-                  : 'Nothing seems to match',
+                  ? tr('searchHint')
+                  : tr('noResults'),
               style: Theme.of(context)
                   .textTheme
                   .displayMedium
@@ -350,7 +386,7 @@ class _SearchViewState extends State<SearchView> {
   }
 
   String knownFor(List known_for) {
-    String str = 'Known for ';
+    String str = tr('knownFor');
     for (var i = 0; i < known_for.length; i++) {
       Map item = known_for[i];
 
@@ -358,20 +394,20 @@ class _SearchViewState extends State<SearchView> {
         str = str +
             item['title'] +
             (i == known_for.length - 2
-                ? ' and '
+                ? tr('and')
                 : (i == known_for.length - 1 ? '' : ', '));
       }
       if (item.containsKey('name')) {
         str = str +
             item['name'] +
             (i == known_for.length - 2
-                ? ' and '
+                ? tr('and')
                 : (i == known_for.length - 1 ? '' : ', '));
       }
     }
 
-    if (str == 'Known for ') {
-      str = str + 'nothing yet';
+    if (str == tr('knownFor')) {
+      str = str + tr('nothingYet');
     }
     return str;
   }
@@ -389,6 +425,5 @@ class _SearchViewState extends State<SearchView> {
             padding: EdgeInsets.symmetric(vertical: 10),
           )
         : emptyList();
-    ;
   }
 }
