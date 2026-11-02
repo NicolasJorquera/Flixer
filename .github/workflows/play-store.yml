@@ -96,7 +96,7 @@ jobs:
           packageName: ${{ env.PACKAGE_NAME }}
           releaseFiles: build/app/outputs/bundle/release/app-release.aab
           releaseName: ${{ steps.version.outputs.name }} (${{ steps.version.outputs.code }})
-          track: ${{ inputs.track || 'internal' }}
+          tracks: ${{ inputs.track || 'internal' }}
           status: completed
 
       - name: Clean up signing files
