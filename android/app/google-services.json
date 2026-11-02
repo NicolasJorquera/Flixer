@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "832971283313",
+    "firebase_url": "https://flixer-app-default-rtdb.firebaseio.com",
+    "project_id": "flixer-app",
+    "storage_bucket": "flixer-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:832971283313:android:6306fd5b99527c2f7ff4d0",
+        "android_client_info": {
+          "package_name": "com.gonisoma.flixer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD990pdmbDEWYImj7qTagyYjAByXkr_DLg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
