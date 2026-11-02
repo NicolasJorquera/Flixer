@@ -1,15 +1,16 @@
-import 'package:flixer/src/apiFunctions/discoverMovies.dart';
-import 'package:flixer/src/apiFunctions/discoverSeries.dart';
+import 'package:flixer/src/apiFunctions/catalog.dart';
 import 'package:flixer/ads/adaptativeBannerAd.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:flixer/global/strings.dart';
 import 'package:flixer/global/variables.dart';
 
-import 'widgets/discover.dart';
-import 'widgets/statusViews.dart';
+import 'widgets/homeFeed.dart';
+import 'widgets/providerBar.dart';
+import 'views/myListView.dart';
 import 'views/searchView.dart';
 
 import '../styles/appTheme.dart';
@@ -24,16 +25,36 @@ class MainPage extends StatefulWidget {
 class MainApp extends State<MainPage> with SingleTickerProviderStateMixin {
   ThemeMode mode = ThemeMode.dark;
   bool switchTheme = false;
-  late Future<List> movies;
-  late Future<List> series;
+  // Part of the feeds' keys: bumping it rebuilds them after a settings change.
+  int feedVersion = 0;
+  // Platform filter shared by the Movies and Series tabs; empty means all.
+  List providers = [];
+  Set<int> providerIds = {};
+  // The platform bar hides while scrolling down and returns when scrolling up.
+  bool showProviderBar = true;
   final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
 
   @override
   void initState() {
     super.initState();
-    movies = getDiscoverMovies();
-    series = getDiscoverSeries();
     getPreferences();
+    loadProviders();
+  }
+
+  // Without providers the bar stays empty and the feeds show everything.
+  Future<void> loadProviders() async {
+    try {
+      final result = await getProviders();
+      setState(() {
+        providers = result;
+        // Drop platforms that are not offered in a newly chosen region.
+        providerIds = providerIds
+            .where((id) => providers.any((p) => p['provider_id'] == id))
+            .toSet();
+      });
+    } on Exception {
+      return;
+    }
   }
 
   void getPreferences() async {
@@ -45,33 +66,12 @@ class MainApp extends State<MainPage> with SingleTickerProviderStateMixin {
     });
   }
 
-  Future<void> getMovies() {
+  void reloadFeeds() {
+    clearCatalogCache();
     setState(() {
-      movies = getDiscoverMovies();
+      feedVersion++;
     });
-    return movies.then((_) {}, onError: (_) {});
-  }
-
-  Future<void> getSeries() {
-    setState(() {
-      series = getDiscoverSeries();
-    });
-    return series.then((_) {}, onError: (_) {});
-  }
-
-  Widget discoverTab(Future<List> future, Future<void> Function() onRefresh) {
-    return FutureBuilder<List>(
-      future: future,
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return ErrorView(onRetry: onRefresh);
-        }
-        if (!snapshot.hasData) {
-          return const LoadingView();
-        }
-        return Discover(list: snapshot.data!, onRefresh: onRefresh);
-      },
-    );
+    loadProviders();
   }
 
   @override
@@ -91,6 +91,7 @@ class MainApp extends State<MainPage> with SingleTickerProviderStateMixin {
                 backgroundColor: Theme.of(context).colorScheme.background,
                 appBar: AppBar(
                   backgroundColor: Theme.of(context).colorScheme.background,
+                  elevation: 0,
                   leading: Image.asset(
                     mode == ThemeMode.dark
                         ? 'assets/icon/darkThemeIconLarge.png'
@@ -99,6 +100,19 @@ class MainApp extends State<MainPage> with SingleTickerProviderStateMixin {
                     width: 50,
                   ),
                   actions: [
+                    IconButton(
+                        tooltip: tr('myList'),
+                        onPressed: () {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const MyListView()));
+                        },
+                        icon: Icon(
+                          Icons.bookmark_border,
+                          color: Theme.of(context).colorScheme.onBackground,
+                          size: 25,
+                        )),
                     IconButton(
                         onPressed: () {
                           Navigator.push(
@@ -238,8 +252,7 @@ class MainApp extends State<MainPage> with SingleTickerProviderStateMixin {
                                               prefs.setString(
                                                   'language', value);
                                               setSheetState(() {});
-                                              getMovies();
-                                              getSeries();
+                                              reloadFeeds();
                                             },
                                           ),
                                         )
@@ -332,8 +345,7 @@ class MainApp extends State<MainPage> with SingleTickerProviderStateMixin {
                                                   await _prefs;
                                               prefs.setString(
                                                   'watchRegion', value);
-                                              getMovies();
-                                              getSeries();
+                                              reloadFeeds();
                                             },
                                           ),
                                         )
@@ -452,22 +464,73 @@ class MainApp extends State<MainPage> with SingleTickerProviderStateMixin {
                           size: 25,
                         ))
                   ],
-                  bottom: TabBar(
-                      labelStyle: Theme.of(context).textTheme.displayMedium,
-                      indicatorColor: Theme.of(context).colorScheme.primary,
-                      tabs: [
-                        Tab(
-                          text: tr('movies'),
-                        ),
-                        Tab(
-                          text: tr('series'),
-                        )
-                      ]),
                 ),
-                body: TabBarView(children: [
-                  discoverTab(movies, getMovies),
-                  discoverTab(series, getSeries),
-                ]),
+                body: Column(
+                  children: [
+                    // Above the tabs because it filters both.
+                    TweenAnimationBuilder<double>(
+                      tween:
+                          Tween(end: showProviderBar && providers.isNotEmpty ? 1 : 0),
+                      duration: const Duration(milliseconds: 200),
+                      builder: (context, visible, child) => ClipRect(
+                        child: Align(
+                          alignment: Alignment.bottomCenter,
+                          heightFactor: visible,
+                          child: Opacity(opacity: visible, child: child),
+                        ),
+                      ),
+                      child: ProviderBar(
+                        providers: providers,
+                        selectedIds: providerIds,
+                        onChanged: (ids) => setState(() {
+                          providerIds = ids;
+                        }),
+                      ),
+                    ),
+                    TabBar(
+                        labelStyle: Theme.of(context).textTheme.displayMedium,
+                        indicatorColor: Theme.of(context).colorScheme.primary,
+                        tabs: [
+                          Tab(
+                            text: tr('movies'),
+                          ),
+                          Tab(
+                            text: tr('series'),
+                          )
+                        ]),
+                    Expanded(
+                      child: NotificationListener<UserScrollNotification>(
+                        onNotification: (notification) {
+                          // Only the feeds' vertical scroll, not tabs or rows.
+                          if (notification.metrics.axis != Axis.vertical) {
+                            return false;
+                          }
+                          final show = notification.direction ==
+                              ScrollDirection.forward;
+                          if (notification.direction != ScrollDirection.idle &&
+                              show != showProviderBar) {
+                            setState(() {
+                              showProviderBar = show;
+                            });
+                          }
+                          return false;
+                        },
+                        child: TabBarView(children: [
+                          HomeFeed(
+                              key: ValueKey('movie$feedVersion'),
+                              mediaType: 'movie',
+                              providerIds: providerIds,
+                              onRefresh: loadProviders),
+                          HomeFeed(
+                              key: ValueKey('tv$feedVersion'),
+                              mediaType: 'tv',
+                              providerIds: providerIds,
+                              onRefresh: loadProviders),
+                        ]),
+                      ),
+                    ),
+                  ],
+                ),
                 bottomNavigationBar: Container(
                     color: Theme.of(context).colorScheme.background,
                     child: AdaptativeBannerAdWidget())
