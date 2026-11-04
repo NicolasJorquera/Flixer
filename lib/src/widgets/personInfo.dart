@@ -1,6 +1,5 @@
 // ignore_for_file: prefer_interpolation_to_compose_strings
 
-import 'package:flixer/ads/interstitialAd.dart';
 import 'package:flixer/global/strings.dart';
 import 'package:flixer/src/apiFunctions/tmdb.dart';
 import 'package:flixer/src/widgets/movieInfo.dart';
@@ -29,14 +28,7 @@ class _PersonInfoPageState extends State<PersonInfoPage> {
   @override
   void initState() {
     super.initState();
-    InterstitialAdManager.instance.onDetailOpened();
     request = getDetails();
-  }
-
-  @override
-  void dispose() {
-    InterstitialAdManager.instance.onDetailClosed();
-    super.dispose();
   }
 
   @override

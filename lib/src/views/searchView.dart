@@ -9,9 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:flixer/src/apiFunctions/search.dart';
 import 'package:flixer/src/apiFunctions/tmdb.dart';
 
-import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'dart:io' show Platform;
-
 class SearchView extends StatefulWidget {
   const SearchView({super.key});
 
@@ -30,17 +27,9 @@ class _SearchViewState extends State<SearchView> {
   int _searchId = 0;
   late FocusNode focusNode;
 
-  final String _adUnitId = Platform.isAndroid
-      ? 'ca-app-pub-3038495459046159/7990033984'
-      : 'ca-app-pub-3940256099942544/3986624511';
-
-  NativeAd? _nativeAd;
-  bool _nativeAdIsLoaded = false;
-
   @override
   void initState() {
     super.initState();
-    loadAd();
 
     focusNode = FocusNode();
     focusNode.requestFocus();
@@ -51,8 +40,6 @@ class _SearchViewState extends State<SearchView> {
     super.dispose();
     _debounce?.cancel();
     focusNode.dispose();
-    _nativeAd?.dispose();
-    _nativeAd = null;
   }
 
   @override
@@ -141,24 +128,7 @@ class _SearchViewState extends State<SearchView> {
                     thickness: 2,
                   ),
                   Expanded(
-                      child: _nativeAdIsLoaded && searchString == ''
-                          ? Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                ConstrainedBox(
-                                  constraints: const BoxConstraints(
-                                    minWidth: 320, // minimum recommended width
-                                    minHeight:
-                                        320, // minimum recommended height
-                                    maxWidth: 400,
-                                    maxHeight: 400,
-                                  ),
-                                  child: AdWidget(ad: _nativeAd!),
-                                ),
-                                emptyList(),
-                              ],
-                            )
-                          : searchFailed
+                      child: searchFailed
                           ? ErrorView(onRetry: getLists)
                           : TabBarView(children: [
                               showSearch(searchAllList),
@@ -171,31 +141,6 @@ class _SearchViewState extends State<SearchView> {
         ),
       ),
     );
-  }
-
-  void loadAd() {
-    _nativeAd = NativeAd(
-        adUnitId: _adUnitId,
-        listener: NativeAdListener(
-          onAdLoaded: (ad) {
-            debugPrint('$NativeAd loaded.');
-            setState(() {
-              _nativeAdIsLoaded = true;
-            });
-          },
-          onAdFailedToLoad: (ad, error) {
-            // Dispose the ad here to free resources.
-            debugPrint('$NativeAd failed to load: $error');
-            ad.dispose();
-          },
-        ),
-        request: const AdRequest(),
-        // Styling
-        nativeTemplateStyle: NativeTemplateStyle(
-          // Required: Choose a template.
-          templateType: TemplateType.medium,
-        ));
-    _nativeAd?.load();
   }
 
   void getLists() async {
@@ -255,9 +200,7 @@ class _SearchViewState extends State<SearchView> {
           Padding(
             padding: const EdgeInsets.all(10),
             child: Text(
-              searchString == ''
-                  ? tr('searchHint')
-                  : tr('noResults'),
+              searchString == '' ? tr('searchHint') : tr('noResults'),
               style: Theme.of(context)
                   .textTheme
                   .displayMedium

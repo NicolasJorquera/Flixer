@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flixer/ads/interstitialAd.dart';
 import 'package:flixer/global/constants.dart';
 import 'package:flixer/global/strings.dart';
 import 'package:flixer/src/mesa/mesaModels.dart';
@@ -38,6 +39,7 @@ class _MesaVoteViewState extends State<MesaVoteView> {
     _readyFor = session.currentMemberId;
     _seenMatches.addAll(session.state.value?.matches ?? []);
     session.state.addListener(onChange);
+    InterstitialAdManager.instance.preload();
   }
 
   @override
@@ -55,6 +57,8 @@ class _MesaVoteViewState extends State<MesaVoteView> {
         (!onePhone && state.everyoneDone)) {
       _navigated = true;
       if (_dialogOpen) Navigator.pop(context);
+      // The end of a table is the app's one natural break for an ad.
+      InterstitialAdManager.instance.showAtBreak();
       Navigator.pushReplacement(
           context,
           MaterialPageRoute(

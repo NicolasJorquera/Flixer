@@ -26,6 +26,10 @@ const Map<String, Map<String, String>> _strings = {
   'ads': {'es': 'Con anuncios', 'en': 'With ads'},
   'rent': {'es': 'Arriendo', 'en': 'Rent'},
   'buy': {'es': 'Compra', 'en': 'Buy'},
+  'notStreaming': {
+    'es': 'Flixer es una guía: no reproduce películas ni series. Te muestra en qué plataformas están.',
+    'en': "Flixer is a guide: it doesn't play movies or series. It shows which platforms have them."
+  },
   'justWatch': {'es': 'Datos de plataformas: JustWatch', 'en': 'Streaming data: JustWatch'},
   'cast': {'es': 'Reparto', 'en': 'Cast'},
   'as': {'es': ' como', 'en': ' as'},
