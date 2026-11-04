@@ -2,7 +2,6 @@
 
 import 'dart:async';
 
-import 'package:flixer/ads/interstitialAd.dart';
 import 'package:flixer/global/strings.dart';
 import 'package:flixer/global/variables.dart';
 import 'package:flixer/src/apiFunctions/catalog.dart';
@@ -45,7 +44,6 @@ class _MovieInfoPageState extends State<MovieInfoPage> {
     super.initState();
     movie = Map.of(widget.movie);
     isTv = mediaTypeOf(movie) == 'tv';
-    InterstitialAdManager.instance.onDetailOpened();
     details = fetchDetails();
   }
 
@@ -53,7 +51,6 @@ class _MovieInfoPageState extends State<MovieInfoPage> {
   void dispose() {
     _trailerTimer?.cancel();
     _controller?.dispose();
-    InterstitialAdManager.instance.onDetailClosed();
     super.dispose();
   }
 
@@ -452,6 +449,17 @@ class _MovieInfoPageState extends State<MovieInfoPage> {
                           style: TextStyle(
                               color: Theme.of(context).colorScheme.onBackground,
                               fontSize: 20),
+                        ),
+                      ),
+                      // Says plainly that the app does not stream, so the
+                      // platform logos are not read as a way to watch here.
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 5),
+                        child: Text(
+                          tr('notStreaming'),
+                          style: TextStyle(
+                              color: Theme.of(context).colorScheme.secondary,
+                              fontSize: 12),
                         ),
                       ),
                       const SizedBox(

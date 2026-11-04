@@ -453,6 +453,7 @@ class MainApp extends State<MainPage> with SingleTickerProviderStateMixin {
                                       Expanded(
                                         // Attribution required by the TMDB API terms.
                                         child: Text(
+                                          '${tr('notStreaming')} '
                                           'This product uses the TMDB API but is not endorsed or certified by TMDB. '
                                           '${tr('justWatch')}.',
                                           style: Theme.of(context)
