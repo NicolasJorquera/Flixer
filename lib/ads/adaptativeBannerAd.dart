@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
+import 'package:flixer/billing/removeAds.dart';
+
 /// This example demonstrates anchored adaptive banner ads.
 class AdaptativeBannerAdWidget extends StatefulWidget {
   
@@ -17,12 +19,29 @@ class _AdaptativeBannerAdWidgetState extends State<AdaptativeBannerAdWidget> {
   bool _isLoaded = false;
 
   @override
+  void initState() {
+    super.initState();
+    RemoveAds.instance.addListener(_onRemoveAds);
+  }
+
+  /// Bought while the banner is on screen: it goes away at once.
+  void _onRemoveAds() {
+    if (!RemoveAds.adsRemoved || _anchoredAdaptiveAd == null) return;
+    _anchoredAdaptiveAd?.dispose();
+    setState(() {
+      _anchoredAdaptiveAd = null;
+      _isLoaded = false;
+    });
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _loadAd();
   }
 
   Future<void> _loadAd() async {
+    if (RemoveAds.adsRemoved) return;
     // Get an AnchoredAdaptiveBannerAdSize before loading the ad.
     final AnchoredAdaptiveBannerAdSize? size =
         await AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(
@@ -61,7 +80,7 @@ class _AdaptativeBannerAdWidgetState extends State<AdaptativeBannerAdWidget> {
 
   @override
   Widget build(BuildContext context) {
-    if (_anchoredAdaptiveAd != null && _isLoaded) {
+    if (_anchoredAdaptiveAd != null && _isLoaded && !RemoveAds.adsRemoved) {
       return Container(
         color: Theme.of(context).colorScheme.background,
         width: _anchoredAdaptiveAd!.size.width.toDouble(),
@@ -75,6 +94,7 @@ class _AdaptativeBannerAdWidgetState extends State<AdaptativeBannerAdWidget> {
 
   @override
   void dispose() {
+    RemoveAds.instance.removeListener(_onRemoveAds);
     super.dispose();
     _anchoredAdaptiveAd?.dispose();
   }

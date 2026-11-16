@@ -55,6 +55,16 @@ En **Settings → Secrets and variables → Actions → Variables**, crea `VERSI
 
 Opcional: en el environment `play-store` puedes activar **Required reviewers** para aprobar a mano cada publicación.
 
+### 5. Producto «Sin anuncios» (compra única)
+
+La app vende una compra única sin backend: Google Play Billing se consulta en el teléfono y el resultado se guarda en los ajustes. Para activarla:
+
+1. En Play Console, en **Monetizar › Productos › Productos integrados en la aplicación**, crea un producto con el ID `flixer_remove_ads`. El ID debe ser exactamente ese (está en `lib/billing/purchases.dart`).
+2. Ponle nombre («Sin anuncios»), descripción y precio, y actívalo. La app siempre muestra el precio que da Play.
+3. Play solo lista el producto después de subir a cualquier pista un `.aab` que incluya la biblioteca de facturación (esta versión o una posterior).
+4. Para probar sin pagar, agrega tu cuenta en **Configuración › Pruebas de licencias** e instala la app desde la pista interna.
+5. En **Seguridad de los datos**, revisa si corresponde declarar el historial de compras: Play Billing lo procesa Google y la app solo guarda en el teléfono si la compra está activa.
+
 ## Publicar una versión
 
 ```bash

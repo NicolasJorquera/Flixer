@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
+import 'package:flixer/billing/removeAds.dart';
+
 /// Shows an interstitial only at a natural break: when a group table ends
 /// and before its results. It is never tied to a navigation control (back,
 /// home, opening a title), which AdMob's navigation policy flagged, and never
@@ -26,7 +28,7 @@ class InterstitialAdManager {
 
   /// Loads the ad ahead of time, e.g. when voting starts.
   void preload() {
-    if (_ad != null || _loading) return;
+    if (_ad != null || _loading || RemoveAds.adsRemoved) return;
     _loading = true;
     InterstitialAd.load(
         adUnitId: _adUnitId,
@@ -47,6 +49,11 @@ class InterstitialAdManager {
   void showAtBreak() {
     final ad = _ad;
     if (ad == null) return;
+    if (RemoveAds.adsRemoved) {
+      _ad = null;
+      ad.dispose();
+      return;
+    }
     final now = DateTime.now();
     if (_lastShown != null && now.difference(_lastShown!) < _minInterval) {
       return;

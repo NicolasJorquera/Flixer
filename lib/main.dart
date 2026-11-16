@@ -5,13 +5,16 @@ import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:flixer/billing/removeAds.dart';
 import 'package:flixer/global/variables.dart';
 import 'package:flixer/src/myList.dart';
 import './src/app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  unawaited(MobileAds.instance.initialize());
+  final removeAds = await RemoveAds.init();
+  // A buyer never loads the AdMob SDK at startup.
+  if (!removeAds.value.owned) unawaited(MobileAds.instance.initialize());
   await loadSettings();
   await MyList.load();
 
