@@ -30,6 +30,31 @@ const Map<String, Map<String, String>> _strings = {
     'es': 'Flixer es una guía: no reproduce películas ni series. Te muestra en qué plataformas están.',
     'en': "Flixer is a guide: it doesn't play movies or series. It shows which platforms have them."
   },
+  'removeAds': {'es': 'Sin anuncios', 'en': 'Remove ads'},
+  'removeAdsBuy': {'es': 'Comprar', 'en': 'Buy'},
+  'removeAdsRestore': {'es': 'Restaurar compra', 'en': 'Restore purchase'},
+  'removeAdsPitch': {'es': 'Pago único: quita todos los anuncios.', 'en': 'One-time payment: removes all ads.'},
+  'removeAdsOwned': {'es': 'Compra activa: Flixer no muestra anuncios.', 'en': 'Purchase active: Flixer shows no ads.'},
+  'removeAdsThanks': {'es': '¡Gracias! Ya no verás anuncios.', 'en': "Thank you! You won't see ads anymore."},
+  'removeAdsRestored': {'es': 'Compra restaurada: sin anuncios.', 'en': 'Purchase restored: no ads.'},
+  'removeAdsBusy': {'es': 'Consultando Google Play…', 'en': 'Checking Google Play…'},
+  'removeAdsPending': {
+    'es': 'Pago pendiente: los anuncios se quitarán cuando Google Play lo confirme.',
+    'en': 'Payment pending: ads will go away once Google Play confirms it.'
+  },
+  'removeAdsNothing': {
+    'es': 'Esta cuenta de Google Play no tiene la compra.',
+    'en': "This Google Play account doesn't have the purchase."
+  },
+  'removeAdsCanceled': {'es': 'Compra cancelada.', 'en': 'Purchase canceled.'},
+  'removeAdsError': {
+    'es': 'No se pudo completar la compra. Inténtalo de nuevo.',
+    'en': "The purchase couldn't be completed. Please try again."
+  },
+  'removeAdsUnavailable': {
+    'es': 'Google Play no está disponible ahora. Revisa tu conexión.',
+    'en': 'Google Play is not available right now. Check your connection.'
+  },
   'justWatch': {'es': 'Datos de plataformas: JustWatch', 'en': 'Streaming data: JustWatch'},
   'cast': {'es': 'Reparto', 'en': 'Cast'},
   'as': {'es': ' como', 'en': ' as'},

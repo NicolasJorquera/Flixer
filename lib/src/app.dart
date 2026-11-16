@@ -1,5 +1,6 @@
 import 'package:flixer/src/apiFunctions/catalog.dart';
 import 'package:flixer/ads/adaptativeBannerAd.dart';
+import 'package:flixer/src/widgets/removeAdsTile.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -433,6 +434,7 @@ class MainApp extends State<MainPage> with SingleTickerProviderStateMixin {
                                         )
                                       ],
                                     ),
+                                    const RemoveAdsTile(),
                                     Divider(
                                       color: Theme.of(context)
                                           .colorScheme
