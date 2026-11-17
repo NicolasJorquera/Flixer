@@ -13,6 +13,7 @@ import 'widgets/homeFeed.dart';
 import 'widgets/providerBar.dart';
 import 'views/myListView.dart';
 import 'mesa/mesaHomeView.dart';
+import 'mesa/mesaPromo.dart';
 import 'views/searchView.dart';
 
 import '../styles/appTheme.dart';
@@ -547,6 +548,16 @@ class MainApp extends State<MainPage> with SingleTickerProviderStateMixin {
                       ),
                     ),
                   ],
+                ),
+                // Always-visible entry to the group table; it shrinks to an
+                // icon while scrolling down, like the platform bar.
+                floatingActionButton: FloatingActionButton.extended(
+                  onPressed: () => MesaPromo.open(context),
+                  isExtended: showProviderBar,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                  icon: const Icon(Icons.groups_rounded),
+                  label: Text(tr('pickTogether')),
                 ),
                 bottomNavigationBar: Container(
                     color: Theme.of(context).colorScheme.background,

@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:flixer/billing/removeAds.dart';
 import 'package:flixer/global/variables.dart';
+import 'package:flixer/src/mesa/mesaPromo.dart';
 import 'package:flixer/src/myList.dart';
 import './src/app.dart';
 
@@ -17,6 +18,7 @@ void main() async {
   if (!removeAds.value.owned) unawaited(MobileAds.instance.initialize());
   await loadSettings();
   await MyList.load();
+  await MesaPromo.load();
 
   runApp( const MainPage());
 }

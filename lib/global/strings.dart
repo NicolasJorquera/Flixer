@@ -93,6 +93,15 @@ const Map<String, Map<String, String>> _strings = {
   'addToList': {'es': 'Agregar a mi lista', 'en': 'Add to my list'},
   'removeFromList': {'es': 'Quitar de mi lista', 'en': 'Remove from my list'},
   'mesa': {'es': 'Mesa grupal', 'en': 'Group table'},
+  'pickTogether': {'es': 'Elegir en grupo', 'en': 'Pick together'},
+  'mesaPromoTitle': {'es': '¿No se deciden qué ver?', 'en': "Can't decide what to watch?"},
+  'mesaPromoBody': {
+    'es': 'Armen una mesa grupal: cada uno vota sí o no y Flixer encuentra la que todos quieren.',
+    'en': 'Start a group table: everyone votes yes or no and Flixer finds the one you all want.'
+  },
+  'tryIt': {'es': 'Probar ahora', 'en': 'Try it now'},
+  'dismiss': {'es': 'Cerrar', 'en': 'Dismiss'},
+  'mesaFromList': {'es': '¿Cuál ven hoy? Decídanlo en una mesa grupal', 'en': 'Which one tonight? Decide at a group table'},
   'details': {'es': 'Ver detalle', 'en': 'Details'},
   'mesaIntro': {
     'es': 'Elijan juntos qué ver: cada uno vota sí o no a las mismas películas o series, y cuando todos quieren la misma, hay match.',

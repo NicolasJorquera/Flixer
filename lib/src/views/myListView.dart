@@ -1,6 +1,7 @@
 import 'package:flixer/ads/adaptativeBannerAd.dart';
 import 'package:flixer/global/strings.dart';
 import 'package:flixer/src/apiFunctions/catalog.dart';
+import 'package:flixer/src/mesa/mesaPromo.dart';
 import 'package:flixer/src/myList.dart';
 import 'package:flixer/src/widgets/posterCard.dart';
 import 'package:flutter/material.dart';
@@ -79,17 +80,25 @@ class MyListView extends StatelessWidget {
         ),
       );
     }
-    return GridView.builder(
-      padding: const EdgeInsets.all(10),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: spacing,
-        mainAxisSpacing: spacing,
-        childAspectRatio: cardWidth / PosterCard.heightFor(cardWidth),
-      ),
-      itemCount: items.length,
-      itemBuilder: (context, index) =>
-          PosterCard(item: items[index], width: cardWidth),
+    return Column(
+      children: [
+        // With several saved titles, choosing one is a group decision.
+        if (items.length >= 2) MesaPromoHint(text: tr('mesaFromList')),
+        Expanded(
+          child: GridView.builder(
+            padding: const EdgeInsets.all(10),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              crossAxisSpacing: spacing,
+              mainAxisSpacing: spacing,
+              childAspectRatio: cardWidth / PosterCard.heightFor(cardWidth),
+            ),
+            itemCount: items.length,
+            itemBuilder: (context, index) =>
+                PosterCard(item: items[index], width: cardWidth),
+          ),
+        ),
+      ],
     );
   }
 }
