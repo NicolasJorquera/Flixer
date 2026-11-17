@@ -1,5 +1,6 @@
 import 'package:flixer/global/strings.dart';
 import 'package:flixer/src/apiFunctions/catalog.dart';
+import 'package:flixer/src/mesa/mesaPromo.dart';
 import 'package:flixer/src/myList.dart';
 import 'package:flixer/src/views/exploreView.dart';
 import 'package:flixer/src/views/myListView.dart';
@@ -75,8 +76,10 @@ class _HomeFeedState extends State<HomeFeed>
       onRefresh: refresh,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.only(bottom: 15),
+        // Room so the last row is not hidden behind the "Pick together" button.
+        padding: const EdgeInsets.only(bottom: 80),
         children: [
+          const MesaPromoCard(),
           ValueListenableBuilder(
             valueListenable: MyList.items,
             builder: (context, saved, _) {
