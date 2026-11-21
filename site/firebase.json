@@ -1,0 +1,19 @@
+{
+  "hosting": {
+    "site": "flixer-app",
+    "public": "public",
+    "cleanUrls": true,
+    "trailingSlash": false,
+    "ignore": ["firebase.json", "**/.*"],
+    "headers": [
+      {
+        "source": "/app-ads.txt",
+        "headers": [{ "key": "Content-Type", "value": "text/plain; charset=utf-8" }]
+      }
+    ],
+    "redirects": [
+      { "source": "/privacidad", "destination": "https://www.termsfeed.com/live/009d6535-cd67-432d-99aa-fd2cff991f1b", "type": 302 },
+      { "source": "/privacy", "destination": "https://www.termsfeed.com/live/009d6535-cd67-432d-99aa-fd2cff991f1b", "type": 302 }
+    ]
+  }
+}
